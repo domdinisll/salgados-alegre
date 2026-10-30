@@ -236,6 +236,31 @@ export function BusinessSettings() {
         </div>
       </div>
       <SaveBar dirty={dirty} save={save} discard={discard} />
+      <PaymentSettings />
     </>
+  );
+}
+
+/** Dados de pagamento enviados ao cliente no email da encomenda e mostrados na confirmação. */
+function PaymentSettings() {
+  const { draft: p, setDraft, dirty, save, discard } = useDraft('payment');
+  const set = <K extends keyof Settings['payment']>(k: K, v: Settings['payment'][K]) => setDraft((x) => ({ ...x, [k]: v }));
+  return (
+    <section className="panel p-5 grid gap-5 mt-6 max-w-3xl" aria-labelledby="pay-h">
+      <div>
+        <h2 id="pay-h" className="font-bold text-lg">Dados de pagamento</h2>
+        <p className="text-[0.88rem] text-muted mt-1">Enviados ao cliente no email da encomenda e mostrados na página de confirmação. Deixe vazio o que não usa.</p>
+      </div>
+      <div className="grid sm:grid-cols-2 gap-5">
+        <Field label="Número MB WAY">{(a) => <input {...a} type="tel" className="input num" placeholder="9XX XXX XXX" value={p.mbwayPhone} onChange={(e) => set('mbwayPhone', e.target.value)} />}</Field>
+        <Field label="Titular da conta">{(a) => <input {...a} className="input" value={p.accountHolder} onChange={(e) => set('accountHolder', e.target.value)} />}</Field>
+      </div>
+      <Field label="IBAN">{(a) => <input {...a} className="input num" placeholder="PT50 0000 0000 0000 0000 0000 0" value={p.iban} onChange={(e) => set('iban', e.target.value.toUpperCase())} />}</Field>
+      <Field label="Nota para o cliente">{(a) => <input {...a} className="input" value={p.note} onChange={(e) => set('note', e.target.value)} />}</Field>
+      <div className="flex flex-wrap justify-end gap-2">
+        <button type="button" className="btn btn-ghost" disabled={!dirty} onClick={discard}>Descartar</button>
+        <button type="button" className="btn btn-primary" disabled={!dirty} onClick={save}>Guardar dados de pagamento</button>
+      </div>
+    </section>
   );
 }

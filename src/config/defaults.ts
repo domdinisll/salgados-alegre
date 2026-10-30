@@ -64,6 +64,12 @@ export const DEFAULT_SETTINGS: Settings = {
     vatRate: 0, // por confirmar com o contabilista
     pricesIncludeVat: true,
   },
+  payment: {
+    mbwayPhone: '',
+    iban: '',
+    accountHolder: '',
+    note: 'Indique o número da encomenda na descrição do pagamento.',
+  },
   delivery: {
     standardFee: 5,
     freeThreshold: 0, // 0 = sem entrega grátis

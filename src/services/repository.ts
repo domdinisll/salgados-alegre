@@ -46,6 +46,7 @@ function mergeSettings(s: Partial<Settings>): Settings {
     business: { ...DEFAULT_SETTINGS.business, ...(s.business ?? {}) },
     delivery: { ...DEFAULT_SETTINGS.delivery, ...(s.delivery ?? {}) },
     pricing: { ...DEFAULT_SETTINGS.pricing, ...(s.pricing ?? {}) },
+    payment: { ...DEFAULT_SETTINGS.payment, ...(s.payment ?? {}) },
   };
 }
 

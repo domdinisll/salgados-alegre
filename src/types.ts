@@ -231,5 +231,11 @@ export interface Settings {
     wholesaleDiscountPct: number;
     codes: DiscountCode[];
   };
+  payment: {
+    mbwayPhone: string;
+    iban: string;
+    accountHolder: string;
+    note: string;
+  };
   sampleData: boolean;
 }

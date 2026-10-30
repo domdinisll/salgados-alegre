@@ -2,7 +2,7 @@ import { LuCircleCheck, LuSearchX } from 'react-icons/lu';
 import { useCurrentCustomer, useOrders } from '../state';
 import { EmptyState, Notice } from '../components/ui';
 import { OrderFacts, OrderLinesTable, OrderTotals } from '../components/OrderView';
-import { paymentNextStep } from '../services/payments';
+import { PaymentDetails } from '../components/PaymentDetails';
 import { lastPlacedOrder } from '../services/orders';
 import { formatDateLong } from '../lib/format';
 import { Link } from '../router';
@@ -33,10 +33,11 @@ export function Confirmation({ id }: { id: string }) {
       </div>
 
       <Notice tone="info" title="Próximos passos" className="mb-6">
-        {paymentNextStep(order.paymentMethod)} A data de entrega fica confirmada nessa altura. Guarde o número da encomenda para qualquer contacto.
+        Enviámos para {order.customer.email} um email com o resumo da encomenda e os dados para pagamento. Confirmamos a encomenda e a data de entrega assim que recebermos o pagamento. Guarde o número da encomenda para qualquer contacto.
       </Notice>
 
       <div className="grid gap-6">
+        <PaymentDetails order={order} />
         <section className="card p-5 sm:p-6">
           <h2 className="text-xl font-bold mb-4">Produtos encomendados</h2>
           <OrderLinesTable order={order} />

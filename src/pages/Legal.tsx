@@ -109,7 +109,7 @@ export function TermsPage() {
 
       <h2>6. Pagamento</h2>
       <p>
-        O pagamento é feito depois de confirmarmos a encomenda, por {LIVE_PAYMENT_METHODS.map(paymentLabel).join(' ou ')}. Enviamos os dados de pagamento ao cliente.
+        O pagamento é feito por {LIVE_PAYMENT_METHODS.map(paymentLabel).join(' ou ')}. Os dados de pagamento são mostrados na confirmação da encomenda e enviados ao cliente por email. A encomenda e a data de entrega são confirmadas depois de recebido o pagamento; se não for possível satisfazer a encomenda, o valor pago é devolvido na totalidade.
         A encomenda só é preparada depois de recebido o pagamento, salvo acordo em contrário.
       </p>
 

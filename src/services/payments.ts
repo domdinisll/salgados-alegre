@@ -19,8 +19,8 @@ export interface PaymentMethodInfo {
 }
 
 export const PAYMENT_METHODS: PaymentMethodInfo[] = [
-  { id: 'mbway', label: 'MB WAY', description: 'Depois de confirmarmos a encomenda, enviamos-lhe o pedido de pagamento por MB WAY.' },
-  { id: 'transferencia', label: 'Transferência bancária', description: 'Depois de confirmarmos a encomenda, enviamos-lhe o IBAN para transferência.' },
+  { id: 'mbway', label: 'MB WAY', description: 'Recebe por email o número MB WAY para pagar.' },
+  { id: 'transferencia', label: 'Transferência bancária', description: 'Recebe por email o IBAN para transferência.' },
   { id: 'multibanco', label: 'Multibanco', description: 'Pagamento por referência Multibanco.' },
   { id: 'cartao', label: 'Cartão de crédito ou débito', description: 'Pagamento com cartão.' },
   { id: 'applepay', label: 'Apple Pay', description: 'Pagamento com Apple Pay.' },
@@ -36,7 +36,7 @@ export function paymentLabel(id: PaymentMethodId): string {
 }
 
 export function paymentNextStep(id: PaymentMethodId): string {
-  if (id === 'mbway') return 'Vamos confirmar a sua encomenda e enviar-lhe o pedido de pagamento por MB WAY para o número indicado.';
-  if (id === 'transferencia') return 'Vamos confirmar a sua encomenda e enviar-lhe os dados para transferência bancária.';
+  if (id === 'mbway') return 'Depois de encomendar, recebe por email o número MB WAY e o valor a pagar. Confirmamos a encomenda e a data de entrega assim que recebermos o pagamento.';
+  if (id === 'transferencia') return 'Depois de encomendar, recebe por email o IBAN e o valor a pagar. Confirmamos a encomenda e a data de entrega assim que recebermos o pagamento.';
   return 'Vamos confirmar a sua encomenda e indicar-lhe como pagar.';
 }
