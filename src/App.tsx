@@ -28,7 +28,7 @@ const TITLES: [RegExp, string][] = [
   [/^como-funciona$/, 'Como funciona'],
   [/^contactos$/, 'Contactos'],
   [/^finalizar$/, 'Finalizar encomenda'],
-  [/^confirmacao-/, 'Encomenda confirmada'],
+  [/^confirmacao-/, 'Encomenda recebida'],
   [/^entrar$/, 'Iniciar sessão'],
   [/^registar$/, 'Criar conta'],
   [/^conta/, 'A minha conta'],

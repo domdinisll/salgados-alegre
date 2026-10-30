@@ -156,7 +156,7 @@ export function Checkout() {
           <div className="grid grid-cols-2 gap-2 max-w-md">
             {(['particular', 'revenda'] as const).map((tp) => (
               <label key={tp} className={`rounded-xl border-2 px-4 py-3 cursor-pointer font-semibold has-[:focus-visible]:outline has-[:focus-visible]:outline-3 has-[:focus-visible]:outline-accent-500 ${f.type === tp ? 'border-brand-600 bg-brand-50' : 'border-line bg-paper'}`}>
-                <input type="radio" name="tipo" className="sr-only" checked={f.type === tp} onChange={() => set('type', tp)} />
+                <input type="radio" name="tipo" value={tp} aria-label={tp === 'particular' ? 'Particular' : 'Empresa / revenda'} className="sr-only" checked={f.type === tp} onChange={() => set('type', tp)} />
                 {tp === 'particular' ? 'Particular' : 'Empresa / revenda'}
               </label>
             ))}
@@ -284,7 +284,7 @@ export function Checkout() {
     3: (
       <form onSubmit={submit} noValidate className="grid gap-6">
         <Notice tone="info" title="Pagamento após confirmação">
-          Não pagamos nada agora. Depois de recebermos a encomenda, confirmamos a disponibilidade e enviamos-lhe os dados para pagamento.
+          Não paga nada agora. Depois de recebermos a encomenda, confirmamos a disponibilidade e enviamos-lhe os dados para pagamento.
         </Notice>
         <PaymentMethodSelector value={f.paymentMethod} onChange={(m) => set('paymentMethod', m)} error={err('paymentMethod')} />
         {f.paymentMethod && (
@@ -292,7 +292,7 @@ export function Checkout() {
         )}
         <div>
           <label className="inline-flex items-start gap-2.5 text-[0.95rem]">
-            <input type="checkbox" className="w-5 h-5 mt-0.5 accent-brand-700 shrink-0" checked={f.acceptTerms} onChange={(e) => set('acceptTerms', e.target.checked)} aria-invalid={!!err('acceptTerms')} aria-describedby={err('acceptTerms') ? 'termos-erro' : undefined} />
+            <input type="checkbox" aria-label="Aceito os termos e condições e a política de privacidade" className="w-5 h-5 mt-0.5 accent-brand-700 shrink-0" checked={f.acceptTerms} onChange={(e) => set('acceptTerms', e.target.checked)} aria-invalid={!!err('acceptTerms')} aria-describedby={err('acceptTerms') ? 'termos-erro' : undefined} />
             <span>Li e aceito os <Link to="info-termos" className="font-semibold underline underline-offset-2">termos e condições</Link> e a <Link to="info-privacidade" className="font-semibold underline underline-offset-2">política de privacidade</Link>.</span>
           </label>
           {err('acceptTerms') && <p id="termos-erro" className="field-error" tabIndex={-1}>{err('acceptTerms')}</p>}
