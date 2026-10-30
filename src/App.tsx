@@ -10,7 +10,8 @@ import { Confirmation } from './pages/Confirmation';
 import { ForgotPage, LoginPage, RegisterPage, ResetPage } from './pages/Auth';
 import { AccountPage } from './pages/Account';
 import { Wholesale } from './pages/Wholesale';
-import { Contacts, HowItWorks, LegalPage } from './pages/Info';
+import { Contacts, HowItWorks } from './pages/Info';
+import { LegalRouter } from './pages/Legal';
 import { AdminApp } from './admin/AdminApp';
 import { EmptyState } from './components/ui';
 import { Link } from './router';
@@ -54,7 +55,7 @@ function Storefront({ route }: { route: string }) {
   if (route === 'conta-encomendas') return <AccountPage view="encomendas" />;
   if ((v = param(route, 'conta-encomenda-'))) return <AccountPage view="encomenda" orderId={v} />;
   if (route === 'conta-moradas') return <AccountPage view="moradas" />;
-  if ((v = param(route, 'info-'))) return <LegalPage slug={v} />;
+  if ((v = param(route, 'info-'))) return <LegalRouter slug={v} />;
   return (
     <div className="wrap py-16">
       <EmptyState icon={<LuSearchX />} title="Página não encontrada" action={<Link to="" className="btn btn-primary">Voltar ao início</Link>}>

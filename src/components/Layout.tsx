@@ -1,5 +1,5 @@
 import { useState, type ReactNode } from 'react';
-import { LuMenu, LuShoppingBasket, LuUser, LuInfo, LuMail, LuPhone, LuMapPin, LuInstagram, LuFacebook, LuLayoutDashboard } from 'react-icons/lu';
+import { LuMenu, LuShoppingBasket, LuUser, LuInfo, LuMail, LuPhone, LuMapPin, LuLayoutDashboard } from 'react-icons/lu';
 import { Link, useRoute } from '../router';
 import { Logo, Modal } from './ui';
 import { useCart, useCurrentCustomer, useSettings, toastStore } from '../state';
@@ -117,14 +117,6 @@ export function Footer() {
           <p className="mt-4 text-[0.95rem] text-cream/75">
             Salgados fritos e congelados para encomendar em quantidade. Para a sua casa, para eventos e para quem revende.
           </p>
-          <div className="mt-5 flex gap-2" aria-label="Redes sociais (a configurar)">
-            {[LuInstagram, LuFacebook].map((Icon, i) => (
-              <span key={i} className="w-10 h-10 rounded-full border border-cream/20 inline-flex items-center justify-center text-cream/60" title="Rede social a configurar">
-                <Icon aria-hidden />
-                <span className="sr-only">{i === 0 ? 'Instagram' : 'Facebook'} (a configurar)</span>
-              </span>
-            ))}
-          </div>
         </div>
         <nav aria-label="Rodapé: loja">
           <h2 className="font-display text-cream font-bold mb-3">Loja</h2>
@@ -155,7 +147,10 @@ export function Footer() {
       <div className="border-t border-cream/10">
         <div className="wrap py-5 flex flex-wrap justify-between gap-3 text-[0.85rem] text-cream/60">
           <p>© {year} {s.name}. Todos os direitos reservados.</p>
-          <p>Livro de Reclamações e dados legais da empresa: a completar antes do lançamento.</p>
+          <p className="flex flex-wrap gap-x-4 gap-y-1">
+            {s.nif && <span>NIF {s.nif}</span>}
+            <a href="https://www.livroreclamacoes.pt" target="_blank" rel="noreferrer" className="font-semibold text-cream underline underline-offset-2 hover:text-accent-400">Livro de Reclamações Eletrónico</a>
+          </p>
         </div>
       </div>
     </footer>
@@ -187,7 +182,6 @@ export function CookieNotice() {
           <Link to="info-cookies" className="text-brand-700 font-semibold underline underline-offset-2">Política de cookies</Link>
         </p>
         <div className="flex gap-2 shrink-0">
-          <button type="button" className="btn btn-outline btn-sm" onClick={() => close('essenciais')}>Apenas essenciais</button>
           <button type="button" className="btn btn-primary btn-sm" onClick={() => close('ok')}>Compreendi</button>
         </div>
       </div>
