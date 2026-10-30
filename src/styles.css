@@ -1,0 +1,148 @@
+@import "tailwindcss";
+
+/*
+  Sistema de design Salgados Alegre — tema claro único, por escolha (identidade de marca).
+  Layout: contentor de 1200px, faixas de cor a toda a largura, cartões brancos sobre creme.
+*/
+@theme {
+  --font-display: "Bricolage Grotesque", "Figtree", ui-sans-serif, system-ui, sans-serif;
+  --font-sans: "Figtree", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+
+  --color-cream: #fbf7ef;
+  --color-cream-2: #f4ecdd;
+  --color-paper: #ffffff;
+  --color-ink: #23262a;
+  --color-muted: #585e5a;
+  --color-line: #e6dfd0;
+
+  --color-brand-50: #eff6f1;
+  --color-brand-100: #dcebe0;
+  --color-brand-200: #b7d5c0;
+  --color-brand-500: #2f7a52;
+  --color-brand-600: #256342;
+  --color-brand-700: #1d5034;
+  --color-brand-800: #173f29;
+  --color-brand-900: #102e1e;
+
+  --color-accent-50: #fef6e7;
+  --color-accent-100: #fcebc8;
+  --color-accent-400: #f2ae45;
+  --color-accent-500: #e99a2c;
+  --color-accent-600: #cf7f12;
+  --color-accent-800: #7d4b06;
+
+  --color-ok: #1f7a46;
+  --color-ok-bg: #e5f4ea;
+  --color-warn: #8a5a00;
+  --color-warn-bg: #fff3d6;
+  --color-danger: #b42318;
+  --color-danger-bg: #fdecea;
+  --color-info: #245a8f;
+  --color-info-bg: #e8f1fa;
+
+  --radius-card: 1.25rem;
+  --shadow-card: 0 1px 2px rgb(35 38 42 / 0.05), 0 6px 20px -8px rgb(35 38 42 / 0.12);
+  --shadow-lift: 0 2px 4px rgb(35 38 42 / 0.06), 0 16px 32px -12px rgb(35 38 42 / 0.2);
+}
+
+:root { color-scheme: light; }
+html { background: var(--color-cream); }
+body {
+  background: var(--color-cream);
+  color: var(--color-ink);
+  font-family: var(--font-sans);
+  font-size: 16px;
+  line-height: 1.55;
+  -webkit-font-smoothing: antialiased;
+}
+body::before {
+  content: ""; position: fixed; inset: 0 0 auto; height: env(safe-area-inset-top, 0px);
+  z-index: 60; background: var(--color-paper);
+}
+h1, h2, h3, h4 { font-family: var(--font-display); text-wrap: balance; letter-spacing: -0.015em; }
+.num { font-variant-numeric: tabular-nums; }
+
+/* Contentor com margem lateral segura */
+.wrap {
+  width: 100%;
+  max-width: 1200px;
+  margin-inline: auto;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+}
+@media (min-width: 768px) {
+  .wrap { padding-left: max(28px, env(safe-area-inset-left, 0px)); padding-right: max(28px, env(safe-area-inset-right, 0px)); }
+}
+
+/* Foco sempre visível (WCAG 2.4.7 / 2.4.11) */
+[data-page-title]:focus, main:focus { outline: none; }
+:focus-visible { outline: 3px solid var(--color-accent-500); outline-offset: 2px; border-radius: 6px; }
+
+@layer components {
+  .btn {
+    display: inline-flex; align-items: center; justify-content: center; gap: .5rem;
+    min-height: 44px; padding: .625rem 1.15rem; border-radius: 999px;
+    font-weight: 600; font-size: .95rem; line-height: 1.2; white-space: nowrap;
+    transition: background-color .15s, color .15s, border-color .15s, box-shadow .15s;
+    cursor: pointer; border: 1.5px solid transparent;
+  }
+  .btn:disabled, .btn[aria-disabled="true"] { opacity: .5; cursor: not-allowed; }
+  .btn-primary { background: var(--color-brand-700); color: #fff; }
+  .btn-primary:hover:not(:disabled) { background: var(--color-brand-800); }
+  .btn-accent { background: var(--color-accent-500); color: var(--color-brand-900); }
+  .btn-accent:hover:not(:disabled) { background: var(--color-accent-400); }
+  .btn-outline { background: var(--color-paper); color: var(--color-brand-800); border-color: var(--color-brand-200); }
+  .btn-outline:hover:not(:disabled) { border-color: var(--color-brand-600); background: var(--color-brand-50); }
+  .btn-ghost { background: transparent; color: var(--color-brand-800); }
+  .btn-ghost:hover:not(:disabled) { background: var(--color-brand-50); }
+  .btn-danger { background: var(--color-danger); color: #fff; }
+  .btn-danger:hover:not(:disabled) { background: #8f1c13; }
+  .btn-sm { min-height: 36px; padding: .4rem .85rem; font-size: .875rem; }
+  .btn-lg { min-height: 52px; padding: .8rem 1.5rem; font-size: 1.02rem; }
+  .icon-btn {
+    display: inline-flex; align-items: center; justify-content: center; width: 44px; height: 44px;
+    border-radius: 999px; color: var(--color-brand-800); transition: background-color .15s; cursor: pointer;
+  }
+  .icon-btn:hover { background: var(--color-brand-50); }
+
+  .card { background: var(--color-paper); border-radius: var(--radius-card); box-shadow: var(--shadow-card); }
+  .panel { background: var(--color-paper); border: 1px solid var(--color-line); border-radius: 1rem; }
+
+  .field-label { display: block; font-weight: 600; font-size: .9rem; margin-bottom: .35rem; color: var(--color-ink); }
+  .field-hint { font-size: .82rem; color: var(--color-muted); margin-top: .3rem; }
+  .field-error { font-size: .85rem; color: var(--color-danger); margin-top: .35rem; display: flex; gap: .35rem; align-items: flex-start; font-weight: 500; }
+  .input {
+    width: 100%; min-height: 46px; padding: .6rem .85rem; border-radius: .75rem;
+    background: var(--color-paper); border: 1.5px solid #d6cdbb; color: var(--color-ink);
+    font-size: 1rem; transition: border-color .15s, box-shadow .15s;
+  }
+  .input:hover { border-color: #bdb29c; }
+  .input:focus { outline: none; border-color: var(--color-brand-600); box-shadow: 0 0 0 3px rgb(47 122 82 / .2); }
+  .input[aria-invalid="true"] { border-color: var(--color-danger); }
+  select.input { appearance: none; padding-right: 2.25rem; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' fill='none' stroke='%23585e5a' stroke-width='2' viewBox='0 0 24 24'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right .75rem center; }
+  textarea.input { min-height: 90px; }
+
+  .badge { display: inline-flex; align-items: center; gap: .3rem; padding: .2rem .6rem; border-radius: 999px; font-size: .78rem; font-weight: 600; line-height: 1.4; white-space: nowrap; }
+  .eyebrow { font-size: .78rem; font-weight: 700; letter-spacing: .09em; text-transform: uppercase; color: var(--color-accent-800); }
+
+  .table-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+  .table { width: 100%; border-collapse: collapse; font-size: .92rem; }
+  .table th { text-align: left; font-weight: 600; font-size: .8rem; text-transform: uppercase; letter-spacing: .05em; color: var(--color-muted); padding: .7rem .85rem; border-bottom: 1px solid var(--color-line); white-space: nowrap; }
+  .table td { padding: .8rem .85rem; border-bottom: 1px solid var(--color-line); vertical-align: middle; }
+  .table tbody tr:hover { background: #fdfaf4; }
+
+  .prose-legal h2 { font-size: 1.25rem; font-weight: 700; margin-top: 1.75rem; margin-bottom: .5rem; }
+  .prose-legal p, .prose-legal li { color: var(--color-muted); max-width: 68ch; }
+  .prose-legal ul { list-style: disc; padding-left: 1.25rem; display: grid; gap: .3rem; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: .01ms !important; transition-duration: .01ms !important; scroll-behavior: auto !important; }
+}
+
+@keyframes slide-in { from { transform: translateX(100%); } to { transform: translateX(0); } }
+@keyframes fade-in { from { opacity: 0; } to { opacity: 1; } }
+@keyframes toast-in { from { transform: translateY(8px); opacity: 0; } to { transform: none; opacity: 1; } }
+.anim-drawer { animation: slide-in .22s ease-out; }
+.anim-fade { animation: fade-in .18s ease-out; }
+.anim-toast { animation: toast-in .2s ease-out; }
