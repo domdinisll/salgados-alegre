@@ -78,10 +78,12 @@ create trigger on_auth_user_created after insert on auth.users
   for each row execute function public.handle_new_user();
 
 -- Um cliente pode editar o seu perfil, mas não se pode tornar administrador nem aprovar-se como revenda.
+-- A regra aplica-se apenas a pedidos vindos do site (papéis anon/authenticated);
+-- o dono do projeto, no SQL Editor do Supabase, pode alterar tudo.
 create or replace function public.protect_profile() returns trigger
-language plpgsql security definer set search_path = public as $$
+language plpgsql set search_path = public as $$
 begin
-  if not public.is_admin() then
+  if current_user in ('anon', 'authenticated') and not public.is_admin() then
     new.is_admin := old.is_admin;
     new.wholesale_approved := old.wholesale_approved;
     new.email := old.email;
