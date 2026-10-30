@@ -1,9 +1,10 @@
 import { Fragment, useState } from 'react';
-import { LuSearch, LuUsers, LuChevronDown } from 'react-icons/lu';
+import { LuSearch, LuUsers, LuChevronDown, LuTrash2 } from 'react-icons/lu';
+import type { Customer } from '../types';
 import { errorText, toast, useCustomers, useOrders } from '../state';
-import { updateCustomer } from '../services/auth';
+import { adminDeleteCustomer, updateCustomer } from '../services/auth';
 import { formatDate, formatEuro, normalize } from '../lib/format';
-import { EmptyState, StatusBadge } from '../components/ui';
+import { ConfirmDialog, EmptyState, StatusBadge } from '../components/ui';
 import { Link } from '../router';
 import { AdminHeader } from './AdminApp';
 
@@ -13,6 +14,7 @@ export function CustomersAdmin() {
   const [q, setQ] = useState('');
   const [type, setType] = useState<'todos' | 'particular' | 'revenda' | 'pendentes'>('todos');
   const [open, setOpen] = useState<string | null>(null);
+  const [toDelete, setToDelete] = useState<Customer | null>(null);
   const list = customers
     .filter((c) => (type === 'todos' || (type === 'pendentes' ? c.type === 'revenda' && !c.wholesaleApproved : c.type === type)) &&
       (!q || normalize(`${c.name} ${c.email} ${c.businessName ?? ''} ${c.nif ?? ''}`).includes(normalize(q))))
@@ -62,6 +64,9 @@ export function CustomersAdmin() {
                         ) : <span className="text-muted">—</span>}
                       </td>
                       <td className="text-right">
+                        {!c.isAdmin && (
+                          <button type="button" className="btn btn-ghost btn-sm text-danger" onClick={() => setToDelete(c)} aria-label={`Apagar conta de ${c.businessName || c.name}`}><LuTrash2 aria-hidden /></button>
+                        )}
                         <button type="button" className="btn btn-ghost btn-sm" aria-expanded={isOpen} aria-controls={`cl-${c.id}`} onClick={() => setOpen(isOpen ? null : c.id)}>
                           Histórico <LuChevronDown className={isOpen ? 'rotate-180' : ''} aria-hidden />
                         </button>
@@ -99,6 +104,9 @@ export function CustomersAdmin() {
           </table>
         </div>
       )}
+      <ConfirmDialog open={!!toDelete} onClose={() => setToDelete(null)} title={`Apagar a conta de ${toDelete?.businessName || toDelete?.name || ''}?`} confirmLabel="Apagar conta"
+        message="A conta, as moradas e o perfil do cliente são apagados de forma permanente. As encomendas já feitas são mantidas no painel, sem ligação à conta."
+        onConfirm={() => { if (toDelete) adminDeleteCustomer(toDelete.id).then(() => toast('Conta apagada.')).catch((e) => toast(errorText(e), 'error')); }} />
     </>
   );
 }

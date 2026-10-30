@@ -9,6 +9,7 @@ import { Link, navigate } from '../router';
 import { AvailabilityBadge, ConfirmDialog, EmptyState, Field, Notice } from '../components/ui';
 import { ProductArt } from '../components/ProductArt';
 import { AdminHeader } from './AdminApp';
+import { NutritionEditor } from './NutritionEditor';
 
 const ARTS = ['coxinha', 'empada', 'croquete', 'frango', 'milho', 'salsicha', 'mistos', 'rissol'];
 
@@ -118,7 +119,8 @@ export function ProductEditor({ id }: { id: string }) {
     if (stock !== '' && !(parseInt(stock, 10) >= 0)) er.stock = 'O stock tem de ser um número inteiro (ou vazio para não controlar).';
     setErrors(er);
     if (Object.keys(er).length) { toast('Corrija os campos assinalados.', 'error'); return; }
-    const final: Product = { ...p, slug, name: p.name.trim(), packSizes: [...new Set(sizes)].sort((a, b) => a - b), stock: stock === '' ? null : parseInt(stock, 10), id: p.id || `p-${slug}`, sampleData: false };
+    const ingredientsList = (p.ingredientsList ?? []).filter((x) => x.name.trim());
+    const final: Product = { ...p, ingredientsList: ingredientsList.length ? ingredientsList : undefined, slug, name: p.name.trim(), packSizes: [...new Set(sizes)].sort((a, b) => a - b), stock: stock === '' ? null : parseInt(stock, 10), id: p.id || `p-${slug}`, sampleData: false };
     setSaving(true);
     saveProduct(final)
       .then(() => { toast(isNew ? 'Produto criado.' : 'Alterações guardadas.'); navigate('admin-produtos'); })
@@ -166,6 +168,8 @@ export function ProductEditor({ id }: { id: string }) {
               <Field label="Alergénios" hint="Vazio = «a confirmar pelo negócio».">{(a) => <textarea {...a} className="input" rows={3} value={p.allergens} onChange={(e) => set('allergens', e.target.value)} />}</Field>
             </div>
           </section>
+
+          <NutritionEditor p={p} set={set} />
 
           <section className="panel p-5 grid gap-5">
             <h2 className="font-bold text-lg">Preparação e preços</h2>

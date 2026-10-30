@@ -1,4 +1,4 @@
-import { useState, type FormEvent, type ReactNode } from 'react';
+import { useEffect, useState, type FormEvent, type ReactNode } from 'react';
 import { LuEye, LuEyeOff } from 'react-icons/lu';
 import type { CustomerType } from '../types';
 import { Field, Notice } from '../components/ui';
@@ -6,7 +6,7 @@ import { login, passwordProblems, register, requestPasswordReset, resetPassword 
 import { validateCustomerInfo, validateNif } from '../lib/orders';
 import { toast } from '../state';
 import { Link, navigate } from '../router';
-import { currentSession } from '../services/supabase';
+import { currentSession, enabledProviders, signInWithProvider, type OAuthProvider } from '../services/supabase';
 
 function AuthShell({ title, intro, children, footer }: { title: string; intro?: ReactNode; children: ReactNode; footer?: ReactNode }) {
   return (
@@ -17,6 +17,30 @@ function AuthShell({ title, intro, children, footer }: { title: string; intro?: 
         <div className="card p-6 sm:p-8 mt-6">{children}</div>
         {footer && <div className="mt-6 text-center text-muted">{footer}</div>}
       </div>
+    </div>
+  );
+}
+
+function SocialButtons({ mode }: { mode: 'entrar' | 'registar' }) {
+  const [providers, setProviders] = useState<Record<OAuthProvider, boolean> | null>(null);
+  useEffect(() => { void enabledProviders().then(setProviders); }, []);
+  if (!providers || (!providers.google && !providers.apple)) return null;
+  const verb = mode === 'entrar' ? 'Continuar' : 'Criar conta';
+  return (
+    <div className="grid gap-2.5">
+      {providers.google && (
+        <button type="button" className="btn btn-outline w-full !border-line !text-ink" onClick={() => signInWithProvider('google')}>
+          <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden><path fill="#4285F4" d="M23.5 12.3c0-.8-.1-1.6-.2-2.3H12v4.4h6.5a5.6 5.6 0 0 1-2.4 3.7v3h3.9c2.3-2.1 3.5-5.2 3.5-8.8z"/><path fill="#34A853" d="M12 24c3.2 0 6-1.1 8-2.9l-3.9-3c-1.1.7-2.5 1.2-4.1 1.2-3.1 0-5.8-2.1-6.7-5H1.3v3.1A12 12 0 0 0 12 24z"/><path fill="#FBBC05" d="M5.3 14.3a7.2 7.2 0 0 1 0-4.6V6.6H1.3a12 12 0 0 0 0 10.8l4-3.1z"/><path fill="#EA4335" d="M12 4.8c1.7 0 3.3.6 4.6 1.8l3.4-3.4A12 12 0 0 0 1.3 6.6l4 3.1c.9-2.9 3.6-4.9 6.7-4.9z"/></svg>
+          {verb} com Google
+        </button>
+      )}
+      {providers.apple && (
+        <button type="button" className="btn w-full bg-ink text-white hover:bg-black" onClick={() => signInWithProvider('apple')}>
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor" aria-hidden><path d="M16.4 12.6c0-2.6 2.1-3.8 2.2-3.9a4.8 4.8 0 0 0-3.8-2c-1.6-.2-3.1.9-3.9.9-.8 0-2-.9-3.4-.9a5 5 0 0 0-4.2 2.6c-1.8 3.1-.5 7.7 1.3 10.2.9 1.2 1.9 2.6 3.2 2.6 1.3-.1 1.8-.8 3.3-.8 1.6 0 2 .8 3.4.8 1.4 0 2.3-1.3 3.1-2.5.9-1.4 1.3-2.8 1.4-2.8-.1 0-2.6-1-2.6-4.2zM13.9 5.1c.7-.9 1.2-2 1.1-3.1-1 0-2.2.7-3 1.5-.6.7-1.2 1.9-1.1 3 1.1.1 2.3-.6 3-1.4z"/></svg>
+          {verb} com Apple
+        </button>
+      )}
+      <div className="flex items-center gap-3 text-[0.85rem] text-muted my-1"><span className="h-px flex-1 bg-line" />ou com email<span className="h-px flex-1 bg-line" /></div>
     </div>
   );
 }
@@ -38,12 +62,13 @@ export function LoginPage() {
   const [pw, setPw] = useState('');
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);
+  const [remember, setRemember] = useState(true);
 
   async function submit(e: FormEvent) {
     e.preventDefault();
     setBusy(true);
     setError('');
-    const r = await login(email, pw);
+    const r = await login(email, pw, remember);
     setBusy(false);
     if (!r.ok) return setError(r.error);
     toast(r.customer?.name ? `Sessão iniciada. Olá, ${r.customer.name.split(' ')[0]}!` : 'Sessão iniciada.');
@@ -53,9 +78,14 @@ export function LoginPage() {
   return (
     <AuthShell title="Iniciar sessão" intro="Aceda às suas encomendas, moradas e preços de revenda." footer={<>Ainda não tem conta? <Link to="registar" className="font-semibold text-brand-700 underline underline-offset-4">Criar conta</Link></>}>
       <form onSubmit={submit} noValidate className="grid gap-5">
+        <SocialButtons mode="entrar" />
         {error && <Notice tone="error">{error}</Notice>}
         <Field label="Email" required>{(p) => <input {...p} type="email" className="input" autoComplete="email" value={email} onChange={(e) => setEmail(e.target.value)} />}</Field>
         <Field label="Palavra-passe" required>{(p) => <PasswordInput {...p} value={pw} onChange={setPw} autoComplete="current-password" />}</Field>
+        <label className="inline-flex items-center gap-2.5 text-[0.95rem] cursor-pointer w-fit">
+          <input type="checkbox" className="w-5 h-5 accent-brand-700" checked={remember} onChange={(e) => setRemember(e.target.checked)} />
+          Manter sessão iniciada
+        </label>
         <div className="flex justify-between items-center gap-3 flex-wrap">
           <Link to="recuperar" className="text-[0.92rem] font-semibold text-brand-700 underline underline-offset-4">Esqueceu-se da palavra-passe?</Link>
           <button type="submit" className="btn btn-primary" disabled={busy}>{busy ? 'A entrar…' : 'Iniciar sessão'}</button>
@@ -112,6 +142,7 @@ export function RegisterPage() {
   return (
     <AuthShell title="Criar conta" intro="Guarde moradas, consulte encomendas e repita pedidos com facilidade." footer={<>Já tem conta? <Link to="entrar" className="font-semibold text-brand-700 underline underline-offset-4">Iniciar sessão</Link></>}>
       <form onSubmit={submit} noValidate className="grid gap-5">
+        <SocialButtons mode="registar" />
         {formError && <Notice tone="error">{formError}</Notice>}
         <fieldset>
           <legend className="field-label">Que tipo de cliente é?</legend>

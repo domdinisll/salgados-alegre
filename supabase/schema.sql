@@ -309,3 +309,33 @@ end $$;
 
 revoke all on function public.place_order(jsonb) from public;
 grant execute on function public.place_order(jsonb) to anon, authenticated;
+
+-- ---------- Apagar contas ----------
+-- As encomendas não são apagadas: ficam guardadas sem ligação à conta (obrigação fiscal de 10 anos).
+
+-- O cliente apaga a própria conta.
+create or replace function public.delete_my_account() returns void
+language plpgsql security definer set search_path = public as $$
+begin
+  if auth.uid() is null then perform _fail('Inicie sessão para apagar a sua conta.'); end if;
+  if exists (select 1 from public.profiles where id = auth.uid() and is_admin) then
+    perform _fail('Contas de administrador não podem ser apagadas a partir do site.');
+  end if;
+  delete from auth.users where id = auth.uid();
+end $$;
+
+-- O administrador apaga a conta de um cliente.
+create or replace function public.admin_delete_customer(target uuid) returns void
+language plpgsql security definer set search_path = public as $$
+begin
+  if not public.is_admin() then perform _fail('Sem permissão.'); end if;
+  if exists (select 1 from public.profiles where id = target and is_admin) then
+    perform _fail('Não é possível apagar uma conta de administrador.');
+  end if;
+  delete from auth.users where id = target;
+end $$;
+
+revoke all on function public.delete_my_account() from public, anon;
+revoke all on function public.admin_delete_customer(uuid) from public, anon;
+grant execute on function public.delete_my_account() to authenticated;
+grant execute on function public.admin_delete_customer(uuid) to authenticated;

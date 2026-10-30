@@ -2,8 +2,8 @@ import { useState, type ReactNode } from 'react';
 import { LuClipboardList, LuMapPin, LuUser, LuLogOut, LuRepeat, LuPackage, LuTrash2, LuPlus, LuChevronLeft } from 'react-icons/lu';
 import type { Address, Customer, Order } from '../types';
 import { cart, errorText, toast, useCurrentCustomer, useOrders, useProducts } from '../state';
-import { logout, updateCustomer } from '../services/auth';
-import { EmptyState, Field, Notice, StatusBadge, ConfirmDialog, PaymentBadge } from '../components/ui';
+import { deleteMyAccount, logout, updateCustomer } from '../services/auth';
+import { EmptyState, Field, Notice, StatusBadge, ConfirmDialog, PaymentBadge, Modal } from '../components/ui';
 import { OrderFacts, OrderLinesTable, OrderTotals } from '../components/OrderView';
 import { formatDate, formatEuro, uid } from '../lib/format';
 import { normalizePostalCode, POSTAL_CODE_RE } from '../lib/delivery';
@@ -114,7 +114,45 @@ function Profile({ customer }: { customer: Customer }) {
         )}
         <button type="submit" className="btn btn-primary w-fit">Guardar alterações</button>
       </form>
+      {!customer.isAdmin && <DeleteAccount />}
     </div>
+  );
+}
+
+function DeleteAccount() {
+  const [open, setOpen] = useState(false);
+  const [typed, setTyped] = useState('');
+  const [busy, setBusy] = useState(false);
+  return (
+    <section className="panel p-6 grid gap-3 border-danger/30" aria-labelledby="apagar-conta">
+      <h2 id="apagar-conta" className="text-lg font-bold">Apagar conta</h2>
+      <p className="text-muted text-[0.95rem]">
+        A sua conta, moradas e dados de perfil são apagados de forma permanente. As encomendas já feitas são mantidas, sem ligação à conta, porque a lei obriga a guardar os registos de faturação.
+      </p>
+      <button type="button" className="btn btn-outline text-danger w-fit" onClick={() => { setTyped(''); setOpen(true); }}><LuTrash2 aria-hidden />Apagar a minha conta</button>
+      <Modal open={open} onClose={() => setOpen(false)} title="Apagar a sua conta?" footer={
+        <div className="flex justify-end gap-3 flex-wrap">
+          <button type="button" className="btn btn-outline" onClick={() => setOpen(false)}>Cancelar</button>
+          <button type="button" className="btn btn-danger" disabled={typed.trim().toUpperCase() !== 'APAGAR' || busy} onClick={async () => {
+            setBusy(true);
+            try {
+              await deleteMyAccount();
+              toast('A sua conta foi apagada.', 'info');
+              navigate('');
+            } catch (e) {
+              toast(errorText(e), 'error');
+            } finally {
+              setBusy(false);
+            }
+          }}>{busy ? 'A apagar…' : 'Apagar definitivamente'}</button>
+        </div>
+      }>
+        <div className="grid gap-3 text-muted">
+          <p>Esta ação não pode ser desfeita.</p>
+          <Field label="Escreva APAGAR para confirmar" required>{(p) => <input {...p} className="input" autoComplete="off" value={typed} onChange={(e) => setTyped(e.target.value)} />}</Field>
+        </div>
+      </Modal>
+    </section>
   );
 }
 

@@ -1,7 +1,7 @@
 import type { Customer, CustomerType } from '../types';
-import { customersStore, loadUserData, profileStore } from '../state';
+import { customersStore, loadUserData, ordersStore, profileStore } from '../state';
 import { api } from './repository';
-import { sendPasswordReset, signIn, signOut, signUp, updatePassword } from './supabase';
+import { rpc, sendPasswordReset, signIn, signOut, signUp, updatePassword } from './supabase';
 
 /**
  * Autenticação real com o Supabase Auth. As palavras-passe nunca passam pelo nosso código
@@ -44,9 +44,9 @@ export async function register(input: RegisterInput): Promise<{ ok: true; confir
   }
 }
 
-export async function login(email: string, password: string): Promise<{ ok: true; customer: Customer | null } | { ok: false; error: string }> {
+export async function login(email: string, password: string, remember = true): Promise<{ ok: true; customer: Customer | null } | { ok: false; error: string }> {
   try {
-    await signIn(email.trim().toLowerCase(), password);
+    await signIn(email.trim().toLowerCase(), password, remember);
     await loadUserData();
     return { ok: true, customer: profileStore.get() };
   } catch (e) {
@@ -83,4 +83,18 @@ export async function updateCustomer(id: string, patch: Partial<Customer>): Prom
   if (profileStore.get()?.id === id) profileStore.set(updated);
   customersStore.set((cs) => cs.map((c) => (c.id === id ? updated : c)));
   return updated;
+}
+
+/** O cliente apaga a própria conta. As encomendas ficam guardadas sem ligação à conta (obrigação fiscal). */
+export async function deleteMyAccount(): Promise<void> {
+  await rpc('delete_my_account', {});
+  await signOut();
+  await loadUserData();
+}
+
+/** O administrador apaga a conta de um cliente (não pode apagar administradores). */
+export async function adminDeleteCustomer(id: string): Promise<void> {
+  await rpc('admin_delete_customer', { target: id });
+  customersStore.set((cs) => cs.filter((c) => c.id !== id));
+  ordersStore.set((os) => os.map((o) => (o.customerId === id ? { ...o, customerId: null } : o)));
 }

@@ -13,13 +13,21 @@ export interface Session {
 }
 
 const SESSION_KEY = 'salgados-alegre:sessao';
+/** "Manter sessão iniciada": guardar no localStorage (persiste) ou no sessionStorage (até fechar o navegador). */
+let persistent = true;
 let session: Session | null = load();
 const listeners = new Set<(s: Session | null) => void>();
 
 function load(): Session | null {
   try {
-    const raw = window.localStorage.getItem(SESSION_KEY);
-    return raw ? (JSON.parse(raw) as Session) : null;
+    const local = window.localStorage.getItem(SESSION_KEY);
+    if (local) return JSON.parse(local) as Session;
+    const temp = window.sessionStorage.getItem(SESSION_KEY);
+    if (temp) {
+      persistent = false;
+      return JSON.parse(temp) as Session;
+    }
+    return null;
   } catch {
     return null;
   }
@@ -28,8 +36,9 @@ function load(): Session | null {
 function save(s: Session | null) {
   session = s;
   try {
-    if (s) window.localStorage.setItem(SESSION_KEY, JSON.stringify(s));
-    else window.localStorage.removeItem(SESSION_KEY);
+    window.localStorage.removeItem(SESSION_KEY);
+    window.sessionStorage.removeItem(SESSION_KEY);
+    if (s) (persistent ? window.localStorage : window.sessionStorage).setItem(SESSION_KEY, JSON.stringify(s));
   } catch {
     /* ignorar */
   }
@@ -158,7 +167,8 @@ export async function signUp(email: string, password: string, data: Record<strin
   return { confirmEmail: true };
 }
 
-export async function signIn(email: string, password: string) {
+export async function signIn(email: string, password: string, remember = true) {
+  persistent = remember;
   const r = await authCall('/token?grant_type=password', { email, password });
   setSessionFromToken(r);
 }
@@ -216,4 +226,25 @@ export async function fetchUser(): Promise<{ id: string; email: string } | null>
   } catch {
     return null;
   }
+}
+
+// ---------------- Início de sessão com Google / Apple ----------------
+
+export type OAuthProvider = 'google' | 'apple';
+
+/** Lê no Supabase que fornecedores externos estão ativos (os botões só aparecem se estiverem). */
+export async function enabledProviders(): Promise<Record<OAuthProvider, boolean>> {
+  try {
+    const r = await fetch(`${SUPABASE_URL}/auth/v1/settings`, { headers: { apikey: SUPABASE_KEY } });
+    const j = await r.json();
+    return { google: !!j?.external?.google, apple: !!j?.external?.apple };
+  } catch {
+    return { google: false, apple: false };
+  }
+}
+
+/** Redireciona para o fornecedor; ao voltar, a sessão chega no endereço (tratada em consumeAuthRedirect). */
+export function signInWithProvider(provider: OAuthProvider) {
+  persistent = true;
+  window.location.href = `${SUPABASE_URL}/auth/v1/authorize?provider=${provider}&redirect_to=${encodeURIComponent(siteUrl())}`;
 }

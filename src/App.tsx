@@ -108,7 +108,8 @@ export function App() {
     void bootstrap().then(() => {
       const kind = authRedirectStore.get();
       if (kind === 'recovery') navigate('redefinir');
-      else if (kind === 'signup' || kind === 'magiclink' || kind === 'login') { toast('Email confirmado. Sessão iniciada.'); navigate('conta'); }
+      else if (kind === 'signup') { toast('Email confirmado. Sessão iniciada.'); navigate('conta'); }
+      else if (kind === 'magiclink' || kind === 'login') { toast('Sessão iniciada.'); navigate('conta'); }
       else if (kind === 'erro') { toast('O link do email é inválido ou expirou.', 'error'); navigate('entrar'); }
     });
   }, []);
