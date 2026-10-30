@@ -46,7 +46,7 @@ function scan(dir) {
     const p = path.join(dir, e.name);
     if (e.isDirectory()) scan(p);
     else if (/\.(tsx?|html)$/.test(e.name)) {
-      for (const tok of fs.readFileSync(p, 'utf8').split(/[\s"'`{}()<>;,\\]+/)) if (tok && tok.length < 120) candidates.add(tok);
+      for (const tok of fs.readFileSync(p, 'utf8').split(/[\s"'`{}<>;\\]+/)) if (tok && tok.length < 120) candidates.add(tok);
     }
   }
 }

@@ -73,7 +73,7 @@ function AllergenGrid({ product }: { product: Product }) {
   const contains = ALLERGENS.filter((a) => has.has(a.id));
   const others = ALLERGENS.filter((a) => !has.has(a.id));
   return (
-    <div className="grid gap-5">
+    <div className="grid grid-cols-[minmax(0,1fr)] gap-5">
       {contains.length > 0 && (
         <div>
           <p className="field-label">Contém</p>
@@ -143,7 +143,7 @@ export function NutritionPage({ slug }: { slug: string }) {
           A informação nutricional e os alergénios deste produto ainda não foram publicados. Em caso de alergia ou intolerância, contacte-nos antes de encomendar.
         </Notice>
       ) : (
-        <div className="grid gap-12">
+        <div className="grid grid-cols-[minmax(0,1fr)] gap-12">
           <section aria-labelledby="alergenios">
             <h2 id="alergenios" className="text-2xl font-extrabold text-brand-900 mb-4">Alergénios</h2>
             <AllergenGrid product={product} />
