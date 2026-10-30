@@ -129,5 +129,5 @@ test('a encomenda é sempre recalculada e nunca marcada como paga', () => {
   assert.equal(res.order.lines[1].prep, 'pronto');
   assert.equal(res.order.paymentStatus, 'pendente');
   assert.equal(res.order.simulated, true);
-  assert.equal(res.order.total, 45); // 20 € + 25 €, portes grátis
+  assert.equal(res.order.total, 50); // 20 € + 25 € + 5 € de entrega (até 20 km)
 });
