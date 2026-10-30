@@ -1,20 +1,66 @@
 import type { CartItem, Customer, Order, PrepOptionId, Product, Settings } from '../types';
+import { DEFAULT_SETTINGS } from '../config/defaults';
 import { createStore, useStore } from '../lib/store';
-import { repository } from '../services/repository';
+import { api } from '../services/repository';
+import { consumeAuthRedirect, currentSession, fetchUser, onSessionChange } from '../services/supabase';
 import { readJSON, writeJSON } from '../services/storage';
 import { computeTotals } from '../lib/pricing';
 
-// ---------- Dados da loja (catálogo, definições, clientes, encomendas) ----------
-export const productsStore = createStore<Product[]>(repository.loadProducts(), (v) => repository.saveProducts(v));
-export const settingsStore = createStore<Settings>(repository.loadSettings(), (v) => repository.saveSettings(v));
-export const customersStore = createStore<Customer[]>(repository.loadCustomers(), (v) => repository.saveCustomers(v));
-export const ordersStore = createStore<Order[]>(repository.loadOrders(), (v) => repository.saveOrders(v));
+// ---------- Dados vindos do servidor ----------
+export const productsStore = createStore<Product[]>([]);
+export const settingsStore = createStore<Settings>(DEFAULT_SETTINGS);
+export const customersStore = createStore<Customer[]>([]); // apenas para administradores
+export const ordersStore = createStore<Order[]>([]);       // as do cliente, ou todas (administrador)
+export const profileStore = createStore<Customer | null>(null);
 
-// ---------- Sessão (demonstração) ----------
-interface Session { customerId: string | null; admin: boolean }
-export const sessionStore = createStore<Session>(readJSON('session', { customerId: null, admin: false }), (v) => writeJSON('session', v));
+type AppStatus = { state: 'loading' } | { state: 'ready' } | { state: 'error'; message: string };
+export const appStore = createStore<AppStatus>({ state: 'loading' });
+/** Tipo de link de email recebido ao abrir o site ('recovery', 'signup', …). */
+export const authRedirectStore = createStore<string | null>(null);
 
-// ---------- Carrinho (persistido localmente, mantém-se entre sessões) ----------
+export async function loadUserData() {
+  if (!currentSession()) {
+    profileStore.set(null);
+    ordersStore.set([]);
+    customersStore.set([]);
+    return;
+  }
+  const user = await fetchUser();
+  if (!user) {
+    profileStore.set(null);
+    ordersStore.set([]);
+    return;
+  }
+  const [profile, orders] = await Promise.all([api.loadProfile(user.id), api.loadOrders()]);
+  profileStore.set(profile);
+  ordersStore.set(orders);
+  customersStore.set(profile?.isAdmin ? await api.loadProfiles() : []);
+}
+
+export async function bootstrap() {
+  authRedirectStore.set(consumeAuthRedirect());
+  appStore.set({ state: 'loading' });
+  try {
+    const [products, settings] = await Promise.all([api.loadProducts(), api.loadSettings()]);
+    productsStore.set(products);
+    settingsStore.set(settings);
+    await loadUserData().catch(() => undefined);
+    appStore.set({ state: 'ready' });
+  } catch (e) {
+    appStore.set({ state: 'error', message: e instanceof Error ? e.message : 'Erro ao carregar a loja.' });
+  }
+}
+
+let lastUserId = currentSession()?.user.id ?? null;
+onSessionChange((s) => {
+  const id = s?.user.id ?? null;
+  if (id !== lastUserId) {
+    lastUserId = id;
+    void loadUserData();
+  }
+});
+
+// ---------- Carrinho (guardado no navegador) ----------
 interface CartState { items: CartItem[]; code: string | null; postalCode: string | null }
 export const cartStore = createStore<CartState>(readJSON('cart', { items: [], code: null, postalCode: null }), (v) => writeJSON('cart', v));
 
@@ -32,7 +78,6 @@ export const cart = {
   setQuantity(key: string, quantity: number) {
     cartStore.set((s) => ({ ...s, items: s.items.map((i) => (i.key === key ? { ...i, quantity } : i)) }));
   },
-  /** Altera preparação ou pack de uma linha, fundindo com outra linha igual se existir. */
   change(key: string, patch: Partial<Pick<CartItem, 'prep' | 'packSize'>>) {
     cartStore.set((s) => {
       const item = s.items.find((i) => i.key === key);
@@ -68,22 +113,22 @@ let toastId = 0;
 export function toast(text: string, tone: Toast['tone'] = 'success') {
   const id = ++toastId;
   toastStore.set((t) => [...t, { id, text, tone }]);
-  setTimeout(() => toastStore.set((t) => t.filter((x) => x.id !== id)), 4200);
+  setTimeout(() => toastStore.set((t) => t.filter((x) => x.id !== id)), 4600);
 }
 
-// ---------- Hooks de conveniência ----------
+/** Mensagem de erro amigável a partir de qualquer erro. */
+export function errorText(e: unknown): string {
+  return e instanceof Error && e.message ? e.message : 'Não foi possível concluir a operação. Tente novamente.';
+}
+
+// ---------- Hooks ----------
 export const useProducts = () => useStore(productsStore);
 export const useSettings = () => useStore(settingsStore);
 export const useCustomers = () => useStore(customersStore);
 export const useOrders = () => useStore(ordersStore);
-export const useSession = () => useStore(sessionStore);
 export const useCart = () => useStore(cartStore);
-
-export function useCurrentCustomer(): Customer | null {
-  const { customerId } = useSession();
-  const customers = useCustomers();
-  return customerId ? customers.find((c) => c.id === customerId) ?? null : null;
-}
+export const useApp = () => useStore(appStore);
+export const useCurrentCustomer = () => useStore(profileStore);
 
 export function isWholesale(c: Customer | null): boolean {
   return !!c && c.type === 'revenda' && c.wholesaleApproved;
@@ -99,10 +144,4 @@ export function useCartTotals(postalCodeOverride?: string | null) {
     discountCode: c.code,
     postalCode: postalCodeOverride === undefined ? c.postalCode : postalCodeOverride,
   });
-}
-
-export function resetDemo() {
-  repository.reset();
-  window.location.hash = '';
-  window.location.reload();
 }

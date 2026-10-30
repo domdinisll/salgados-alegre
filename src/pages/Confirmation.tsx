@@ -2,18 +2,21 @@ import { LuCircleCheck, LuSearchX } from 'react-icons/lu';
 import { useCurrentCustomer, useOrders } from '../state';
 import { EmptyState, Notice } from '../components/ui';
 import { OrderFacts, OrderLinesTable, OrderTotals } from '../components/OrderView';
-import { realWorldNote } from '../services/payments';
+import { paymentNextStep } from '../services/payments';
+import { lastPlacedOrder } from '../services/orders';
 import { formatDateLong } from '../lib/format';
 import { Link } from '../router';
 
 export function Confirmation({ id }: { id: string }) {
-  const order = useOrders().find((o) => o.id === id);
+  const orders = useOrders();
   const customer = useCurrentCustomer();
+  const last = lastPlacedOrder();
+  const order = orders.find((o) => o.id === id) ?? (last?.id === id ? last : undefined);
   if (!order) {
     return (
       <div className="wrap py-16">
-        <EmptyState icon={<LuSearchX />} title="Encomenda não encontrada" action={<Link to="" className="btn btn-primary">Voltar ao início</Link>}>
-          Não encontrámos esta encomenda neste navegador.
+        <EmptyState icon={<LuSearchX />} title="Encomenda não encontrada" action={<Link to={customer ? 'conta-encomendas' : ''} className="btn btn-primary">{customer ? 'Ver as minhas encomendas' : 'Voltar ao início'}</Link>}>
+          {customer ? 'Esta encomenda não está associada à sua conta.' : 'Para consultar encomendas anteriores, inicie sessão na sua conta.'}
         </EmptyState>
       </div>
     );
@@ -22,15 +25,15 @@ export function Confirmation({ id }: { id: string }) {
     <div className="wrap py-10 md:py-14 max-w-4xl">
       <div className="text-center mb-8">
         <span className="mx-auto w-16 h-16 rounded-full bg-ok-bg text-ok text-4xl flex items-center justify-center" aria-hidden><LuCircleCheck /></span>
-        <p className="eyebrow mt-5">Encomenda confirmada · simulação</p>
+        <p className="eyebrow mt-5">Encomenda recebida</p>
         <h1 className="mt-2 text-3xl md:text-4xl font-extrabold text-brand-900" data-page-title tabIndex={-1}>Obrigado, {order.customer.name.split(' ')[0]}!</h1>
         <p className="mt-3 text-lg text-muted">
-          Registámos a sua encomenda <strong className="num text-ink">{order.number}</strong> com entrega pedida para {formatDateLong(order.deliveryDate)}.
+          Recebemos a sua encomenda <strong className="num text-ink">{order.number}</strong>, com entrega pedida para {formatDateLong(order.deliveryDate)}.
         </p>
       </div>
 
-      <Notice tone="warn" title="Demonstração: nenhum pagamento foi efetuado" className="mb-6">
-        Esta encomenda foi criada num ambiente de demonstração. O pagamento está «Pendente» e é apenas simulado. {realWorldNote(order.paymentMethod)} A data de entrega é um pedido e seria confirmada pela equipa.
+      <Notice tone="info" title="Próximos passos" className="mb-6">
+        {paymentNextStep(order.paymentMethod)} A data de entrega fica confirmada nessa altura. Guarde o número da encomenda para qualquer contacto.
       </Notice>
 
       <div className="grid gap-6">

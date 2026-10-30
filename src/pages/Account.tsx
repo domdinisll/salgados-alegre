@@ -1,7 +1,7 @@
 import { useState, type ReactNode } from 'react';
 import { LuClipboardList, LuMapPin, LuUser, LuLogOut, LuRepeat, LuPackage, LuTrash2, LuPlus, LuChevronLeft } from 'react-icons/lu';
 import type { Address, Customer, Order } from '../types';
-import { cart, toast, useCurrentCustomer, useOrders, useProducts } from '../state';
+import { cart, errorText, toast, useCurrentCustomer, useOrders, useProducts } from '../state';
 import { logout, updateCustomer } from '../services/auth';
 import { EmptyState, Field, Notice, StatusBadge, ConfirmDialog, PaymentBadge } from '../components/ui';
 import { OrderFacts, OrderLinesTable, OrderTotals } from '../components/OrderView';
@@ -39,7 +39,7 @@ function AccountShell({ customer, title, children }: { customer: Customer; title
               );
             })}
             <li>
-              <button type="button" className="w-full flex items-center gap-2.5 px-3 py-2.5 rounded-xl font-medium text-danger hover:bg-danger-bg" onClick={() => { logout(); toast('Sessão terminada.', 'info'); navigate(''); }}>
+              <button type="button" className="w-full flex items-center gap-2.5 px-3 py-2.5 rounded-xl font-medium text-danger hover:bg-danger-bg" onClick={async () => { await logout(); toast('Sessão terminada.', 'info'); navigate(''); }}>
                 <LuLogOut aria-hidden />Terminar sessão
               </button>
             </li>
@@ -96,13 +96,14 @@ function Profile({ customer }: { customer: Customer }) {
         const er = validateCustomerInfo({ ...f, type: customer.type });
         setErrors(er);
         if (Object.keys(er).length) return;
-        updateCustomer(customer.id, { name: f.name.trim(), email: f.email.trim().toLowerCase(), phone: f.phone.trim(), businessName: f.businessName || undefined, nif: f.nif || undefined });
-        toast('Dados atualizados.');
+        updateCustomer(customer.id, { name: f.name.trim(), phone: f.phone.trim(), businessName: f.businessName || undefined, nif: f.nif || undefined })
+          .then(() => toast('Dados atualizados.'))
+          .catch((err) => toast(errorText(err), 'error'));
       }}>
         <h2 className="text-xl font-bold">Dados pessoais</h2>
         <Field label="Nome completo" required error={errors.name}>{(p) => <input {...p} className="input" value={f.name} onChange={(e) => setF({ ...f, name: e.target.value })} />}</Field>
         <div className="grid sm:grid-cols-2 gap-5">
-          <Field label="Email" required error={errors.email}>{(p) => <input {...p} type="email" className="input" value={f.email} onChange={(e) => setF({ ...f, email: e.target.value })} />}</Field>
+          <Field label="Email" hint="O email da conta não pode ser alterado aqui.">{(p) => <input {...p} type="email" className="input bg-cream" value={f.email} readOnly />}</Field>
           <Field label="Telefone" required error={errors.phone}>{(p) => <input {...p} type="tel" className="input" value={f.phone} onChange={(e) => setF({ ...f, phone: e.target.value })} />}</Field>
         </div>
         {customer.type === 'revenda' && (
@@ -218,10 +219,9 @@ function Addresses({ customer }: { customer: Customer }) {
           if (f.city.trim().length < 2) er.city = 'Indique a localidade.';
           setErrors(er);
           if (Object.keys(er).length) return;
-          updateCustomer(customer.id, { addresses: [...customer.addresses, { id: uid('a-'), label: f.label.trim() || `Morada ${customer.addresses.length + 1}`, street: f.street.trim(), extra: f.extra.trim(), postalCode: pc, city: f.city.trim() }] });
-          setF(empty);
-          setAdding(false);
-          toast('Morada guardada.');
+          updateCustomer(customer.id, { addresses: [...customer.addresses, { id: uid('a-'), label: f.label.trim() || `Morada ${customer.addresses.length + 1}`, street: f.street.trim(), extra: f.extra.trim(), postalCode: pc, city: f.city.trim() }] })
+            .then(() => { setF(empty); setAdding(false); toast('Morada guardada.'); })
+            .catch((err) => toast(errorText(err), 'error'));
         }}>
           <h2 className="text-lg font-bold">Nova morada</h2>
           <Field label="Nome da morada" hint="Ex.: Casa, Café, Armazém">{(p) => <input {...p} className="input" value={f.label} onChange={(e) => setF({ ...f, label: e.target.value })} />}</Field>
@@ -240,7 +240,7 @@ function Addresses({ customer }: { customer: Customer }) {
         <button type="button" className="btn btn-outline w-fit" onClick={() => setAdding(true)}><LuPlus aria-hidden />Adicionar morada</button>
       )}
       <ConfirmDialog open={!!toDelete} onClose={() => setToDelete(null)} title="Apagar esta morada?" message={toDelete ? `${toDelete.label}: ${toDelete.street}` : ''} confirmLabel="Apagar morada"
-        onConfirm={() => toDelete && updateCustomer(customer.id, { addresses: customer.addresses.filter((a) => a.id !== toDelete.id) })} />
+        onConfirm={() => { if (toDelete) updateCustomer(customer.id, { addresses: customer.addresses.filter((a) => a.id !== toDelete.id) }).catch((err) => toast(errorText(err), 'error')); }} />
     </div>
   );
 }

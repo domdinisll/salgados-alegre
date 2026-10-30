@@ -10,7 +10,7 @@ import { checkDeliveryDate, normalizePostalCode, resolveZone } from '../lib/deli
 import { validateCustomerInfo, validateNif } from '../lib/orders';
 import { formatDateLong, formatEuro, uid } from '../lib/format';
 import { placeOrder } from '../services/orders';
-import { PAYMENT_METHODS, realWorldNote } from '../services/payments';
+import { paymentLabel, paymentNextStep } from '../services/payments';
 import { updateCustomer } from '../services/auth';
 import { Link, navigate } from '../router';
 
@@ -134,9 +134,9 @@ export function Checkout() {
       return;
     }
     if (customer && f.saveAddress && !customer.addresses.some((a) => a.street === f.street && a.postalCode === pc)) {
-      updateCustomer(customer.id, { addresses: [...customer.addresses, { id: uid('a-'), label: `Morada ${customer.addresses.length + 1}`, street: f.street, extra: f.extra, postalCode: pc, city: f.city }] });
+      updateCustomer(customer.id, { addresses: [...customer.addresses, { id: uid('a-'), label: `Morada ${customer.addresses.length + 1}`, street: f.street, extra: f.extra, postalCode: pc, city: f.city }] }).catch(() => undefined);
     }
-    toast('Encomenda registada (simulação).');
+    toast('Encomenda enviada. Obrigado!');
     navigate(`confirmacao-${res.order.id}`);
   }
 
@@ -283,12 +283,12 @@ export function Checkout() {
     ),
     3: (
       <form onSubmit={submit} noValidate className="grid gap-6">
-        <Notice tone="warn" title="Pagamento simulado">
-          Esta é uma demonstração. Nenhum pagamento será processado e não pedimos dados de cartão. A encomenda fica registada com o pagamento «Pendente» e identificada como simulação.
+        <Notice tone="info" title="Pagamento após confirmação">
+          Não pagamos nada agora. Depois de recebermos a encomenda, confirmamos a disponibilidade e enviamos-lhe os dados para pagamento.
         </Notice>
         <PaymentMethodSelector value={f.paymentMethod} onChange={(m) => set('paymentMethod', m)} error={err('paymentMethod')} />
         {f.paymentMethod && (
-          <p className="flex gap-2 text-[0.92rem] text-muted"><LuInfo className="mt-0.5 shrink-0" aria-hidden />{realWorldNote(f.paymentMethod)}</p>
+          <p className="flex gap-2 text-[0.92rem] text-muted"><LuInfo className="mt-0.5 shrink-0" aria-hidden />{paymentNextStep(f.paymentMethod)}</p>
         )}
         <div>
           <label className="inline-flex items-start gap-2.5 text-[0.95rem]">
@@ -301,7 +301,7 @@ export function Checkout() {
         <div className="flex justify-between gap-3 flex-wrap">
           <button type="button" className="btn btn-ghost" onClick={back} disabled={submitting}><LuChevronLeft aria-hidden />Voltar</button>
           <button type="submit" className="btn btn-accent btn-lg" disabled={submitting} aria-busy={submitting}>
-            {submitting ? 'A registar encomenda…' : <>Confirmar encomenda · {formatEuro(t.total)} <span className="text-[0.8rem] font-semibold opacity-80">(simulação)</span></>}
+            {submitting ? 'A registar encomenda…' : <>Confirmar encomenda · {formatEuro(t.total)}</>}
           </button>
         </div>
       </form>
@@ -333,7 +333,7 @@ export function Checkout() {
           </ul>
           <div className="border-t border-line pt-3"><TotalsTable t={t} /></div>
           {isWholesale(customer) && <p className="text-[0.85rem] text-ok font-semibold">Preço de revenda aplicado à sua conta.</p>}
-          {step === 3 && f.paymentMethod && <p className="text-[0.88rem] text-muted">Pagamento: {PAYMENT_METHODS.find((m) => m.id === f.paymentMethod)?.label} (simulação)</p>}
+          {step === 3 && f.paymentMethod && <p className="text-[0.88rem] text-muted">Pagamento: {paymentLabel(f.paymentMethod)}, após confirmação</p>}
           <p className="flex items-center gap-2 text-[0.8rem] text-muted"><LuLock aria-hidden />Os totais são recalculados ao registar a encomenda.</p>
         </aside>
       </div>

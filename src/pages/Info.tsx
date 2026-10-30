@@ -55,30 +55,10 @@ export function Contacts() {
           <li className="panel p-5 flex gap-4"><LuPhone className="text-2xl text-accent-600 shrink-0" aria-hidden /><div><p className="font-semibold">Telefone</p><p className="select-all">{show(b.phone)}</p></div></li>
           <li className="panel p-5 flex gap-4"><LuMapPin className="text-2xl text-accent-600 shrink-0" aria-hidden /><div><p className="font-semibold">Morada</p><p>{show(b.address)}</p></div></li>
         </ul>
-        <div className="card p-6">
-          {sent ? (
-            <Notice tone="success" title="Mensagem pronta a enviar">Na demonstração, as mensagens não são enviadas. Quando o envio de email estiver ligado, receberá uma resposta da nossa equipa.</Notice>
-          ) : (
-            <form noValidate className="grid gap-5" onSubmit={(e) => {
-              e.preventDefault();
-              const er = validateCustomerInfo({ ...f, type: 'particular' });
-              if (f.message.trim().length < 10) er.message = 'Escreva uma mensagem com pelo menos 10 caracteres.';
-              setErrors(er);
-              if (Object.keys(er).length) return;
-              setSent(true);
-              toast('Mensagem registada (demonstração, não enviada).', 'info');
-            }}>
-              <h2 className="text-xl font-bold">Envie-nos uma mensagem</h2>
-              <Field label="Nome" required error={errors.name}>{(p) => <input {...p} className="input" autoComplete="name" value={f.name} onChange={(e) => setF({ ...f, name: e.target.value })} />}</Field>
-              <div className="grid sm:grid-cols-2 gap-5">
-                <Field label="Email" required error={errors.email}>{(p) => <input {...p} type="email" className="input" autoComplete="email" value={f.email} onChange={(e) => setF({ ...f, email: e.target.value })} />}</Field>
-                <Field label="Telefone" required error={errors.phone}>{(p) => <input {...p} type="tel" className="input" autoComplete="tel" value={f.phone} onChange={(e) => setF({ ...f, phone: e.target.value })} />}</Field>
-              </div>
-              <Field label="Mensagem" required error={errors.message}>{(p) => <textarea {...p} className="input" rows={5} value={f.message} onChange={(e) => setF({ ...f, message: e.target.value })} />}</Field>
-              <button type="submit" className="btn btn-primary w-fit">Enviar mensagem</button>
-              <p className="field-hint">Usamos os seus dados apenas para responder a este pedido. Consulte a <Link to="info-privacidade" className="underline">política de privacidade</Link>.</p>
-            </form>
-          )}
+        <div className="card p-6 grid gap-4">
+          <h2 className="text-xl font-bold">Encomendas e pedidos especiais</h2>
+          <p className="text-muted">Para encomendar, use a <Link to="produtos" className="font-semibold text-brand-700 underline underline-offset-2">loja</Link> ou a <Link to="grosso" className="font-semibold text-brand-700 underline underline-offset-2">encomenda rápida</Link>. Depois de cada encomenda, entramos em contacto para confirmar a entrega e o pagamento.</p>
+          <p className="text-muted">Para quantidades maiores, eventos ou revenda regular, contacte-nos pelo email ou telefone indicados.</p>
         </div>
       </div>
     </div>
@@ -100,7 +80,7 @@ const LEGAL: Record<string, { title: string; sections: { h: string; p: string[] 
     { h: 'Conservação e subcontratantes', p: ['Prazos de conservação, alojamento, fornecedor de pagamentos e de email: a definir com o negócio.'] },
   ] },
   cookies: { title: 'Política de cookies', sections: [
-    { h: 'O que usamos', p: ['Nesta versão, o site usa apenas armazenamento local essencial do navegador para guardar o carrinho, a sessão de demonstração e esta preferência. Não usamos cookies de publicidade nem de análise.'] },
+    { h: 'O que usamos', p: ['Nesta versão, o site usa apenas armazenamento local essencial do navegador para guardar o carrinho, a sessão da conta e esta preferência. Não usamos cookies de publicidade nem de análise.'] },
     { h: 'Alterações', p: ['Se forem adicionadas ferramentas de análise ou marketing, será pedido consentimento prévio.'] },
   ] },
   entregas: { title: 'Política de entregas', sections: [

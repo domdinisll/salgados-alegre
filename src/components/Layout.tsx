@@ -21,16 +21,19 @@ function isActive(route: string, to: string) {
   return route === to;
 }
 
-export function DemoBar() {
+/** Barra visível apenas para administradores com sessão iniciada. */
+export function AdminBar() {
+  const customer = useCurrentCustomer();
+  if (!customer?.isAdmin) return null;
   return (
     <div className="bg-brand-900 text-cream/90 text-[0.82rem]">
       <div className="wrap flex flex-wrap items-center justify-between gap-x-4 gap-y-1 py-2">
         <p className="flex items-center gap-2">
           <LuInfo className="shrink-0 text-accent-400" aria-hidden />
-          <span><strong className="text-cream">Versão de demonstração.</strong> Pagamentos simulados. Nenhuma encomenda é real.</span>
+          <span>Sessão de administrador: {customer.name || customer.email}</span>
         </p>
         <Link to="admin" className="inline-flex items-center gap-1.5 font-semibold text-accent-400 hover:text-accent-100 underline-offset-4 hover:underline">
-          <LuLayoutDashboard aria-hidden /> Painel de gestão (demo)
+          <LuLayoutDashboard aria-hidden /> Painel de gestão
         </Link>
       </div>
     </div>
@@ -198,7 +201,7 @@ export function StoreLayout({ children }: { children: ReactNode }) {
       <a href="#conteudo" onClick={(e) => { e.preventDefault(); document.getElementById('conteudo')?.focus(); }} className="sr-only focus:not-sr-only focus:fixed focus:top-3 focus:left-3 focus:z-[90] btn btn-accent">
         Saltar para o conteúdo
       </a>
-      <DemoBar />
+      <AdminBar />
       <Header />
       <main id="conteudo" tabIndex={-1} className="outline-none">{children}</main>
       <Footer />

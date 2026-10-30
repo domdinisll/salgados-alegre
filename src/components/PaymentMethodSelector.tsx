@@ -1,12 +1,12 @@
 import { LuCreditCard, LuSmartphone, LuLandmark, LuWallet } from 'react-icons/lu';
 import type { ReactNode } from 'react';
 import type { PaymentMethodId } from '../types';
-import { PAYMENT_METHODS } from '../services/payments';
+import { LIVE_PAYMENT_METHODS, PAYMENT_METHODS } from '../services/payments';
 
-// Marcas textuais neutras. Os logótipos oficiais devem ser usados conforme as regras de cada marca
-// e do fornecedor de pagamentos escolhido.
+// Marcas textuais neutras (os logótipos oficiais seguem as regras de cada marca).
 const MARK: Record<PaymentMethodId, ReactNode> = {
   mbway: <span className="font-black tracking-tight text-[0.8rem]">MB<span className="text-danger">WAY</span></span>,
+  transferencia: <LuLandmark aria-hidden className="text-xl" />,
   multibanco: <LuLandmark aria-hidden className="text-xl" />,
   cartao: <LuCreditCard aria-hidden className="text-xl" />,
   applepay: <LuSmartphone aria-hidden className="text-xl" />,
@@ -19,11 +19,12 @@ export function PaymentMark({ id }: { id: PaymentMethodId }) {
 }
 
 export function PaymentMethodSelector({ value, onChange, error }: { value: PaymentMethodId | ''; onChange: (m: PaymentMethodId) => void; error?: string }) {
+  const methods = PAYMENT_METHODS.filter((m) => LIVE_PAYMENT_METHODS.includes(m.id));
   return (
     <fieldset aria-describedby={error ? 'pm-erro' : undefined}>
-      <legend className="field-label !text-base mb-3">Método de pagamento</legend>
+      <legend className="field-label !text-base mb-3">Como prefere pagar?</legend>
       <div className="grid sm:grid-cols-2 gap-3">
-        {PAYMENT_METHODS.map((m) => (
+        {methods.map((m) => (
           <label key={m.id} className={`flex gap-3 items-start rounded-2xl border-2 p-4 cursor-pointer transition-colors has-[:focus-visible]:outline has-[:focus-visible]:outline-3 has-[:focus-visible]:outline-accent-500 ${value === m.id ? 'border-brand-600 bg-brand-50' : 'border-line bg-paper hover:border-brand-200'}`}>
             <input type="radio" name="metodo-pagamento" value={m.id} checked={value === m.id} onChange={() => onChange(m.id)} className="sr-only" />
             <PaymentMark id={m.id} />
@@ -33,7 +34,6 @@ export function PaymentMethodSelector({ value, onChange, error }: { value: Payme
                 {value === m.id && <span className="badge bg-brand-700 text-white !text-[0.7rem]">Selecionado</span>}
               </span>
               <span className="block text-[0.85rem] text-muted mt-0.5">{m.description}</span>
-              {m.availabilityNote && <span className="block text-[0.78rem] text-muted mt-1 italic">{m.availabilityNote}</span>}
             </span>
           </label>
         ))}

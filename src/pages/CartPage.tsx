@@ -60,7 +60,7 @@ export function CartPage() {
             </div>
             {t.codeError ? <p id="codigo-erro" className="field-error" role="alert">{t.codeError}</p>
               : t.code ? <p className="text-[0.85rem] text-ok font-semibold">Código {t.code.code} aplicado.</p>
-              : <p id="codigo-dica" className="field-hint">Experimente o código de exemplo BEMVINDO10.</p>}
+              : <p id="codigo-dica" className="field-hint">Se tiver um código de desconto, introduza-o aqui.</p>}
           </form>
 
           <TotalsTable t={t} />

@@ -1,8 +1,9 @@
-import { useState, type ReactNode } from 'react';
+import type { ReactNode } from 'react';
 import { LuLayoutDashboard, LuClipboardList, LuPackage, LuUsers, LuTruck, LuPercent, LuSettings, LuStore, LuLogOut, LuShieldAlert, LuRotateCcw } from 'react-icons/lu';
-import { Link, param } from '../router';
-import { Logo, ConfirmDialog } from '../components/ui';
-import { resetDemo, sessionStore, useOrders, useSession } from '../state';
+import { Link, navigate, param } from '../router';
+import { Logo } from '../components/ui';
+import { loadUserData, toast, useCurrentCustomer, useOrders } from '../state';
+import { logout } from '../services/auth';
 import { Overview } from './Overview';
 import { OrdersAdmin, OrderAdminDetail } from './Orders';
 import { ProductsAdmin, ProductEditor } from './Products';
@@ -24,19 +25,21 @@ function activeFor(route: string, to: string) {
   return route === to || route.startsWith(to.replace(/s$/, '') + '-') || route.startsWith(to + '-');
 }
 
-function Gate() {
+function Gate({ loggedIn }: { loggedIn: boolean }) {
   return (
     <div className="min-h-screen flex items-center justify-center p-4 bg-cream">
       <div className="card max-w-md w-full p-8">
         <Logo />
         <h1 className="mt-6 text-2xl font-extrabold text-brand-900">Painel de gestão</h1>
-        <div className="mt-4 rounded-xl bg-warn-bg text-warn p-4 flex gap-3 text-[0.92rem]">
-          <LuShieldAlert className="text-xl shrink-0 mt-0.5" aria-hidden />
-          <p className="text-ink/85"><strong className="text-warn">Ambiente de demonstração.</strong> Este painel não tem controlo de acesso real. Numa versão de produção, só utilizadores autorizados entram aqui, com autenticação no servidor.</p>
-        </div>
-        <button type="button" className="btn btn-primary btn-lg w-full mt-6" onClick={() => sessionStore.set((s) => ({ ...s, admin: true }))}>
-          Entrar no painel (demonstração)
-        </button>
+        {loggedIn ? (
+          <div className="mt-4 rounded-xl bg-warn-bg p-4 flex gap-3 text-[0.92rem]">
+            <LuShieldAlert className="text-xl shrink-0 mt-0.5 text-warn" aria-hidden />
+            <p className="text-ink/85">A sua conta não tem acesso ao painel de gestão.</p>
+          </div>
+        ) : (
+          <p className="mt-3 text-muted">Inicie sessão com a conta de administrador para continuar.</p>
+        )}
+        {!loggedIn && <Link to="entrar" className="btn btn-primary btn-lg w-full mt-6">Iniciar sessão</Link>}
         <Link to="" className="btn btn-ghost w-full mt-2">Voltar à loja</Link>
       </div>
     </div>
@@ -44,10 +47,9 @@ function Gate() {
 }
 
 export function AdminApp({ route }: { route: string }) {
-  const { admin } = useSession();
+  const me = useCurrentCustomer();
   const orders = useOrders();
-  const [confirmReset, setConfirmReset] = useState(false);
-  if (!admin) return <Gate />;
+  if (!me?.isAdmin) return <Gate loggedIn={!!me} />;
   const pending = orders.filter((o) => o.status === 'recebida').length;
 
   let v: string | null;
@@ -87,26 +89,24 @@ export function AdminApp({ route }: { route: string }) {
           </ul>
         </nav>
         <div className="hidden lg:grid gap-1 p-3 border-t border-cream/10">
-          <p className="px-3 py-2 text-[0.78rem] text-cream/60">Ambiente de demonstração. Dados guardados apenas neste navegador.</p>
+          <p className="px-3 py-2 text-[0.78rem] text-cream/60 truncate">{me.email}</p>
           <Link to="" className="flex items-center gap-2.5 px-3 py-2 rounded-xl text-cream/80 hover:bg-brand-800"><LuStore aria-hidden />Ver loja</Link>
-          <button type="button" onClick={() => setConfirmReset(true)} className="flex items-center gap-2.5 px-3 py-2 rounded-xl text-cream/80 hover:bg-brand-800 text-left"><LuRotateCcw aria-hidden />Repor dados de exemplo</button>
-          <button type="button" onClick={() => sessionStore.set((s) => ({ ...s, admin: false }))} className="flex items-center gap-2.5 px-3 py-2 rounded-xl text-cream/80 hover:bg-brand-800 text-left"><LuLogOut aria-hidden />Sair do painel</button>
+          <button type="button" onClick={() => void loadUserData().then(() => toast('Dados atualizados.', 'info'))} className="flex items-center gap-2.5 px-3 py-2 rounded-xl text-cream/80 hover:bg-brand-800 text-left"><LuRotateCcw aria-hidden />Atualizar dados</button>
+          <button type="button" onClick={async () => { await logout(); navigate(''); }} className="flex items-center gap-2.5 px-3 py-2 rounded-xl text-cream/80 hover:bg-brand-800 text-left"><LuLogOut aria-hidden />Terminar sessão</button>
         </div>
       </aside>
       <main id="admin-main" tabIndex={-1} className="min-w-0 outline-none">
         <div className="bg-accent-50 border-b border-accent-100 text-[0.85rem] text-accent-800">
           <div className="px-[max(16px,env(safe-area-inset-left))] lg:px-8 py-2 flex flex-wrap justify-between gap-2">
-            <span><strong>Demonstração:</strong> sem controlo de acesso real · pagamentos simulados · dados locais</span>
+            <span>Pagamento após confirmação: marque «Pago» na encomenda quando receber o pagamento.</span>
             <span className="flex gap-4 lg:hidden">
               <Link to="" className="font-semibold underline">Ver loja</Link>
-              <button type="button" className="font-semibold underline" onClick={() => sessionStore.set((s) => ({ ...s, admin: false }))}>Sair</button>
+              <button type="button" className="font-semibold underline" onClick={async () => { await logout(); navigate(''); }}>Sair</button>
             </span>
           </div>
         </div>
         <div className="pl-[max(16px,env(safe-area-inset-left))] pr-[max(16px,env(safe-area-inset-right))] lg:px-8 py-6 lg:py-8 max-w-[1280px] pb-[calc(2rem+env(safe-area-inset-bottom))]">{page}</div>
       </main>
-      <ConfirmDialog open={confirmReset} onClose={() => setConfirmReset(false)} title="Repor os dados de exemplo?" confirmLabel="Repor dados"
-        message="Todos os produtos, encomendas, clientes e definições deste navegador voltam aos valores de exemplo. As alterações feitas serão perdidas." onConfirm={resetDemo} />
     </div>
   );
 }

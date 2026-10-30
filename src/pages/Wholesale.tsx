@@ -6,7 +6,7 @@ import { cart, isWholesale, toast, useCurrentCustomer, useOrders, useProducts, u
 import { computeLine, enabledPreps, fromPrice } from '../lib/pricing';
 import { formatEuro, round2 } from '../lib/format';
 import { ProductArt } from '../components/ProductArt';
-import { Notice, SampleTag, AvailabilityBadge } from '../components/ui';
+import { Notice, AvailabilityBadge } from '../components/ui';
 import { canBuy } from '../components/ProductCard';
 import { Link, navigate } from '../router';
 import { reorder } from './Account';
@@ -160,7 +160,6 @@ export function Wholesale() {
             </button>
           </div>
         </div>
-        <p className="mt-3"><SampleTag>Preços de exemplo para demonstração</SampleTag></p>
       </section>
     </>
   );

@@ -2,7 +2,7 @@ import { LuArrowRight } from 'react-icons/lu';
 import { useOrders, useProducts } from '../state';
 import { formatDate, formatDateLong, formatEuro, parseISODate, toISODate, WEEKDAYS_SHORT } from '../lib/format';
 import { Link } from '../router';
-import { StatusBadge, PaymentBadge } from '../components/ui';
+import { StatusBadge } from '../components/ui';
 import { AdminHeader } from './AdminApp';
 import type { OrderStatus } from '../types';
 
@@ -27,7 +27,7 @@ export function Overview() {
     { label: 'Total de encomendas', value: String(orders.length), hint: `${orders.filter((o) => o.status === 'cancelada').length} canceladas` },
     { label: 'Encomendas em curso', value: String(pending.length), hint: `${orders.filter((o) => o.status === 'recebida').length} por começar`, attention: orders.some((o) => o.status === 'recebida') },
     { label: 'Encomendas entregues', value: String(completed.length), hint: 'Concluídas' },
-    { label: 'Valor encomendado', value: formatEuro(sales), hint: 'Pagamentos simulados, não recebidos' },
+    { label: 'Valor encomendado', value: formatEuro(sales), hint: `${formatEuro(valid.filter((o) => o.paymentStatus === 'pago').reduce((s, o) => s + o.total, 0))} já pago` },
   ];
 
   return (
@@ -114,7 +114,6 @@ export function Overview() {
           </section>
         </div>
       </div>
-      <p className="mt-6 text-[0.85rem] text-muted">Pagamentos: todas as encomendas desta demonstração têm pagamento <PaymentBadge status="pendente" simulated /> porque nenhum pagamento real é processado.</p>
     </>
   );
 }

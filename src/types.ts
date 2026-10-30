@@ -85,6 +85,7 @@ export interface Customer {
   businessContact?: string;
   nif?: string;
   wholesaleApproved: boolean;
+  isAdmin?: boolean;
   addresses: Address[];
   createdAt: string;
   /** Hash PBKDF2 (demonstração). Nunca guardamos palavras-passe em texto simples. */
@@ -103,7 +104,7 @@ export type OrderStatus =
 
 export type PaymentStatus = 'pendente' | 'pago' | 'falhado' | 'reembolsado';
 
-export type PaymentMethodId = 'multibanco' | 'mbway' | 'cartao' | 'applepay' | 'googlepay' | 'paypal';
+export type PaymentMethodId = 'transferencia' | 'multibanco' | 'mbway' | 'cartao' | 'applepay' | 'googlepay' | 'paypal';
 
 export interface OrderLine {
   productId: string;

@@ -14,7 +14,10 @@ import { Contacts, HowItWorks, LegalPage } from './pages/Info';
 import { AdminApp } from './admin/AdminApp';
 import { EmptyState } from './components/ui';
 import { Link } from './router';
-import { LuSearchX } from 'react-icons/lu';
+import { LuSearchX, LuRotateCcw } from 'react-icons/lu';
+import { authRedirectStore, bootstrap, toast, useApp } from './state';
+import { Logo } from './components/ui';
+import { navigate } from './router';
 
 const TITLES: [RegExp, string][] = [
   [/^$/, 'Salgados Alegre · Salgados por grosso'],
@@ -46,7 +49,7 @@ function Storefront({ route }: { route: string }) {
   if (route === 'entrar') return <LoginPage />;
   if (route === 'registar') return <RegisterPage />;
   if (route === 'recuperar') return <ForgotPage />;
-  if ((v = param(route, 'redefinir-'))) return <ResetPage token={v} />;
+  if (route === 'redefinir') return <ResetPage />;
   if (route === 'conta') return <AccountPage view="perfil" />;
   if (route === 'conta-encomendas') return <AccountPage view="encomendas" />;
   if ((v = param(route, 'conta-encomenda-'))) return <AccountPage view="encomenda" orderId={v} />;
@@ -61,8 +64,45 @@ function Storefront({ route }: { route: string }) {
   );
 }
 
+function Loading() {
+  return (
+    <div className="min-h-[70vh] flex flex-col items-center justify-center gap-5 p-6" role="status" aria-live="polite">
+      <Logo />
+      <span className="w-8 h-8 rounded-full border-[3px] border-brand-100 border-t-brand-600 animate-spin" aria-hidden />
+      <span className="sr-only">A carregar a loja…</span>
+    </div>
+  );
+}
+
+function LoadError({ message }: { message: string }) {
+  return (
+    <div className="min-h-[70vh] flex items-center justify-center p-4">
+      <div className="max-w-md text-center">
+        <Logo />
+        <h1 className="mt-6 text-2xl font-extrabold text-brand-900">Não foi possível carregar a loja</h1>
+        <p className="mt-2 text-muted">{message}</p>
+        <button type="button" className="btn btn-primary mt-6" onClick={() => void bootstrap()}><LuRotateCcw aria-hidden />Tentar novamente</button>
+      </div>
+    </div>
+  );
+}
+
+let booted = false;
+
 export function App() {
   const route = useRoute();
+  const app = useApp();
+
+  useEffect(() => {
+    if (booted) return;
+    booted = true;
+    void bootstrap().then(() => {
+      const kind = authRedirectStore.get();
+      if (kind === 'recovery') navigate('redefinir');
+      else if (kind === 'signup' || kind === 'magiclink' || kind === 'login') { toast('Email confirmado. Sessão iniciada.'); navigate('conta'); }
+      else if (kind === 'erro') { toast('O link do email é inválido ou expirou.', 'error'); navigate('entrar'); }
+    });
+  }, []);
 
   useEffect(() => {
     const t = TITLES.find(([re]) => re.test(route))?.[1] ?? 'Salgados Alegre';
@@ -76,7 +116,8 @@ export function App() {
 
   return (
     <>
-      {route.startsWith('admin') ? <AdminApp route={route} /> : <StoreLayout><Storefront route={route} /></StoreLayout>}
+      {app.state === 'loading' ? <Loading /> : app.state === 'error' ? <LoadError message={app.message} />
+        : route.startsWith('admin') ? <AdminApp route={route} /> : <StoreLayout><Storefront route={route} /></StoreLayout>}
       <Toasts />
     </>
   );

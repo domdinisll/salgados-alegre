@@ -4,8 +4,9 @@ import type { CustomerType } from '../types';
 import { Field, Notice } from '../components/ui';
 import { login, passwordProblems, register, requestPasswordReset, resetPassword } from '../services/auth';
 import { validateCustomerInfo, validateNif } from '../lib/orders';
-import { toast, useCustomers } from '../state';
+import { toast } from '../state';
 import { Link, navigate } from '../router';
+import { currentSession } from '../services/supabase';
 
 function AuthShell({ title, intro, children, footer }: { title: string; intro?: ReactNode; children: ReactNode; footer?: ReactNode }) {
   return (
@@ -13,9 +14,6 @@ function AuthShell({ title, intro, children, footer }: { title: string; intro?: 
       <div className="max-w-lg mx-auto">
         <h1 className="text-3xl md:text-4xl font-extrabold text-brand-900" data-page-title tabIndex={-1}>{title}</h1>
         {intro && <p className="mt-2 text-muted">{intro}</p>}
-        <Notice tone="warn" className="mt-5" title="Modo de demonstração">
-          As contas ficam guardadas apenas neste navegador. A palavra-passe é guardada como hash, mas isto não é autenticação segura de produção.
-        </Notice>
         <div className="card p-6 sm:p-8 mt-6">{children}</div>
         {footer && <div className="mt-6 text-center text-muted">{footer}</div>}
       </div>
@@ -40,16 +38,16 @@ export function LoginPage() {
   const [pw, setPw] = useState('');
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);
-  const sample = useCustomers().filter((c) => c.sampleData);
 
   async function submit(e: FormEvent) {
     e.preventDefault();
     setBusy(true);
-    const r = await login(email, pw).catch(() => ({ ok: false as const, error: 'O seu navegador não suporta a autenticação de demonstração.' }));
+    setError('');
+    const r = await login(email, pw);
     setBusy(false);
     if (!r.ok) return setError(r.error);
-    toast(`Sessão iniciada. Olá, ${r.customer.name.split(' ')[0]}!`);
-    navigate('conta');
+    toast(r.customer?.name ? `Sessão iniciada. Olá, ${r.customer.name.split(' ')[0]}!` : 'Sessão iniciada.');
+    navigate(r.customer?.isAdmin ? 'admin' : 'conta');
   }
 
   return (
@@ -63,20 +61,6 @@ export function LoginPage() {
           <button type="submit" className="btn btn-primary" disabled={busy}>{busy ? 'A entrar…' : 'Iniciar sessão'}</button>
         </div>
       </form>
-      {sample.length > 0 && (
-        <div className="mt-8 pt-6 border-t border-line">
-          <p className="font-semibold mb-1">Experimentar com uma conta de exemplo</p>
-          <p className="text-[0.85rem] text-muted mb-3">Apenas na demonstração: entra sem palavra-passe.</p>
-          <div className="grid gap-2">
-            {sample.map((c) => (
-              <button key={c.id} type="button" className="btn btn-outline justify-between" onClick={async () => { await login(c.email, ''); toast(`Sessão de exemplo: ${c.name}`); navigate('conta'); }}>
-                <span className="truncate">{c.name}</span>
-                <span className="badge bg-cream-2 text-ink">{c.type === 'revenda' ? (c.wholesaleApproved ? 'Revenda aprovada' : 'Revenda pendente') : 'Particular'}</span>
-              </button>
-            ))}
-          </div>
-        </div>
-      )}
     </AuthShell>
   );
 }
@@ -86,6 +70,7 @@ export function RegisterPage() {
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [busy, setBusy] = useState(false);
   const [formError, setFormError] = useState('');
+  const [confirmSent, setConfirmSent] = useState(false);
   const set = (k: keyof typeof f, v: string | boolean) => setF((p) => ({ ...p, [k]: v }));
 
   async function submit(e: FormEvent) {
@@ -102,13 +87,28 @@ export function RegisterPage() {
       return;
     }
     setBusy(true);
-    const r = await register(f).catch(() => ({ ok: false as const, error: 'O seu navegador não suporta a autenticação de demonstração.' }));
+    setFormError('');
+    const r = await register(f);
     setBusy(false);
     if (!r.ok) return setFormError(r.error);
+    if (r.confirmEmail) {
+      setConfirmSent(true);
+      return;
+    }
     toast('Conta criada com sucesso.');
     navigate('conta');
   }
 
+  if (confirmSent) {
+    return (
+      <AuthShell title="Confirme o seu email">
+        <Notice tone="success" title="Conta criada">
+          Enviámos um email para {f.email}. Abra o link desse email para ativar a conta e depois inicie sessão.
+        </Notice>
+        <Link to="entrar" className="btn btn-primary mt-5">Iniciar sessão</Link>
+      </AuthShell>
+    );
+  }
   return (
     <AuthShell title="Criar conta" intro="Guarde moradas, consulte encomendas e repita pedidos com facilidade." footer={<>Já tem conta? <Link to="entrar" className="font-semibold text-brand-700 underline underline-offset-4">Iniciar sessão</Link></>}>
       <form onSubmit={submit} noValidate className="grid gap-5">
@@ -153,33 +153,48 @@ export function RegisterPage() {
 
 export function ForgotPage() {
   const [email, setEmail] = useState('');
-  const [done, setDone] = useState<null | { token: string | null }>(null);
+  const [done, setDone] = useState(false);
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState('');
   return (
-    <AuthShell title="Recuperar palavra-passe" intro="Indique o email da sua conta. Enviaremos um link para definir uma nova palavra-passe.">
+    <AuthShell title="Recuperar palavra-passe" intro="Indique o email da sua conta. Enviamos-lhe um link para definir uma nova palavra-passe.">
       {done ? (
         <div className="grid gap-4">
-          <Notice tone="success">Se existir uma conta com o email indicado, receberá um link para definir uma nova palavra-passe.</Notice>
-          {done.token && (
-            <Notice tone="info" title="Apenas na demonstração">
-              O envio de emails ainda não está ligado. Use este link para continuar: <Link to={`redefinir-${done.token}`} className="font-semibold underline underline-offset-2">definir nova palavra-passe</Link>.
-            </Notice>
-          )}
+          <Notice tone="success">Se existir uma conta com este email, vai receber um link para definir uma nova palavra-passe. Verifique também a pasta de spam.</Notice>
           <Link to="entrar" className="btn btn-outline w-fit">Voltar a iniciar sessão</Link>
         </div>
       ) : (
-        <form noValidate className="grid gap-5" onSubmit={(e) => { e.preventDefault(); setDone({ token: requestPasswordReset(email) }); }}>
+        <form noValidate className="grid gap-5" onSubmit={async (e) => {
+          e.preventDefault();
+          if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email.trim())) return setError('Indique um endereço de email válido.');
+          setBusy(true); setError('');
+          const r = await requestPasswordReset(email);
+          setBusy(false);
+          if (!r.ok) return setError(r.error ?? '');
+          setDone(true);
+        }}>
+          {error && <Notice tone="error">{error}</Notice>}
           <Field label="Email" required>{(p) => <input {...p} type="email" className="input" autoComplete="email" value={email} onChange={(e) => setEmail(e.target.value)} />}</Field>
-          <button type="submit" className="btn btn-primary">Enviar link de recuperação</button>
+          <button type="submit" className="btn btn-primary" disabled={busy}>{busy ? 'A enviar…' : 'Enviar link de recuperação'}</button>
         </form>
       )}
     </AuthShell>
   );
 }
 
-export function ResetPage({ token }: { token: string }) {
+export function ResetPage() {
   const [pw, setPw] = useState('');
   const [confirm, setConfirm] = useState('');
   const [error, setError] = useState('');
+  const [busy, setBusy] = useState(false);
+  if (!currentSession()) {
+    return (
+      <AuthShell title="Definir nova palavra-passe">
+        <Notice tone="warn" title="Link inválido ou expirado">Peça um novo link de recuperação e abra-o neste navegador.</Notice>
+        <Link to="recuperar" className="btn btn-primary mt-5">Pedir novo link</Link>
+      </AuthShell>
+    );
+  }
   return (
     <AuthShell title="Definir nova palavra-passe">
       <form noValidate className="grid gap-5" onSubmit={async (e) => {
@@ -187,15 +202,17 @@ export function ResetPage({ token }: { token: string }) {
         const pp = passwordProblems(pw);
         if (pp) return setError(pp);
         if (pw !== confirm) return setError('As palavras-passe não coincidem.');
-        const r = await resetPassword(token, pw);
+        setBusy(true);
+        const r = await resetPassword(pw);
+        setBusy(false);
         if (!r.ok) return setError(r.error!);
-        toast('Palavra-passe alterada. Já pode iniciar sessão.');
-        navigate('entrar');
+        toast('Palavra-passe alterada.');
+        navigate('conta');
       }}>
         {error && <Notice tone="error">{error}</Notice>}
         <Field label="Nova palavra-passe" required hint="Pelo menos 8 caracteres, com letras e números.">{(p) => <PasswordInput {...p} value={pw} onChange={setPw} autoComplete="new-password" />}</Field>
         <Field label="Confirmar nova palavra-passe" required>{(p) => <PasswordInput {...p} value={confirm} onChange={setConfirm} autoComplete="new-password" />}</Field>
-        <button type="submit" className="btn btn-primary">Guardar palavra-passe</button>
+        <button type="submit" className="btn btn-primary" disabled={busy}>{busy ? 'A guardar…' : 'Guardar palavra-passe'}</button>
       </form>
     </AuthShell>
   );

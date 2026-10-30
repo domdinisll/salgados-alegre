@@ -1,40 +1,57 @@
-import type { Order, OrderStatus } from '../types';
-import { buildOrder, type OrderInput } from '../lib/orders';
-import { cart, customersStore, ordersStore, productsStore, settingsStore } from '../state';
-import { repository } from './repository';
-import { providerFor } from './payments';
+import type { Order, OrderStatus, PaymentStatus } from '../types';
+import type { OrderInput } from '../lib/orders';
+import { cart, ordersStore, productsStore, profileStore } from '../state';
+import { api } from './repository';
 
-/**
- * Processamento de encomendas (demonstração).
- * Em produção, `placeOrder` passa a ser um pedido ao servidor, que recalcula preços,
- * descontos, portes e stock, e grava tudo numa transação.
- */
-export async function placeOrder(input: OrderInput): Promise<{ ok: true; order: Order; note: string } | { ok: false; errors: string[] }> {
-  const res = buildOrder(input, productsStore.get(), settingsStore.get(), customersStore.get(), repository.nextOrderSeq(), new Date());
-  if (!res.ok) return res;
-  const payment = await providerFor(input.paymentMethod).start(res.order);
+const LAST_ORDER_KEY = 'salgados-alegre:ultima-encomenda';
 
-  // Reserva de stock (só para produtos com stock controlado).
-  productsStore.set((ps) =>
-    ps.map((p) => {
-      if (p.stock === null) return p;
-      const used = res.order.lines.filter((l) => l.productId === p.id).reduce((s, l) => s + l.units, 0);
-      if (!used) return p;
-      const stock = Math.max(0, p.stock - used);
-      return { ...p, stock, availability: stock === 0 ? 'esgotado' : p.availability };
-    }),
-  );
-  ordersStore.set((os) => [res.order, ...os]);
-  cart.clear();
-  return { ok: true, order: res.order, note: payment.realWorldNote };
+/** Cria a encomenda no servidor, que recalcula preços, portes e stock. */
+export async function placeOrder(input: OrderInput): Promise<{ ok: true; order: Order } | { ok: false; errors: string[] }> {
+  try {
+    const order = await api.placeOrder(input);
+    try {
+      sessionStorage.setItem(LAST_ORDER_KEY, JSON.stringify(order));
+    } catch {
+      /* ignorar */
+    }
+    if (profileStore.get()) ordersStore.set((os) => [order, ...os]);
+    cart.clear();
+    // O stock pode ter mudado.
+    api.loadProducts().then((p) => productsStore.set(p)).catch(() => undefined);
+    return { ok: true, order };
+  } catch (e) {
+    return { ok: false, errors: [e instanceof Error ? e.message : 'Não foi possível registar a encomenda.'] };
+  }
+}
+
+/** Encomenda acabada de fazer neste separador (também para clientes sem conta). */
+export function lastPlacedOrder(): Order | null {
+  try {
+    const raw = sessionStorage.getItem(LAST_ORDER_KEY);
+    return raw ? (JSON.parse(raw) as Order) : null;
+  } catch {
+    return null;
+  }
+}
+
+async function patch(id: string, f: (o: Order) => Order) {
+  const current = ordersStore.get().find((o) => o.id === id);
+  if (!current) throw new Error('Encomenda não encontrada.');
+  const next = f(current);
+  await api.updateOrder(next);
+  ordersStore.set((os) => os.map((o) => (o.id === id ? next : o)));
 }
 
 export function updateOrderStatus(id: string, status: OrderStatus) {
   const at = new Date().toISOString();
-  ordersStore.set((os) => os.map((o) => (o.id === id ? { ...o, status, statusHistory: [...o.statusHistory, { status, at }] } : o)));
+  return patch(id, (o) => ({ ...o, status, statusHistory: [...o.statusHistory, { status, at }] }));
+}
+
+export function updatePaymentStatus(id: string, paymentStatus: PaymentStatus) {
+  return patch(id, (o) => ({ ...o, paymentStatus }));
 }
 
 export function addOrderNote(id: string, text: string) {
   const at = new Date().toISOString();
-  ordersStore.set((os) => os.map((o) => (o.id === id ? { ...o, notes: [...o.notes, { text, at }] } : o)));
+  return patch(id, (o) => ({ ...o, notes: [...o.notes, { text, at }] }));
 }

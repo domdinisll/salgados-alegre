@@ -1,9 +1,10 @@
 import { useMemo, useState } from 'react';
 import { LuChevronLeft, LuSearch, LuClipboardList } from 'react-icons/lu';
-import type { OrderStatus } from '../types';
-import { ORDER_STATUS_LABELS } from '../config/defaults';
-import { toast, useOrders } from '../state';
-import { addOrderNote, updateOrderStatus } from '../services/orders';
+import type { OrderStatus, PaymentStatus } from '../types';
+import { ORDER_STATUS_LABELS, PAYMENT_STATUS_LABELS } from '../config/defaults';
+import { errorText, toast, useOrders } from '../state';
+import { addOrderNote, updateOrderStatus, updatePaymentStatus } from '../services/orders';
+import { paymentLabel } from '../services/payments';
 import { formatDate, formatDateTime, formatEuro, normalize } from '../lib/format';
 import { Link } from '../router';
 import { EmptyState, Notice, PaymentBadge, StatusBadge, ConfirmDialog } from '../components/ui';
@@ -110,7 +111,16 @@ export function OrderAdminDetail({ id }: { id: string }) {
   const [confirmCancel, setConfirmCancel] = useState(false);
   if (!order) return <EmptyState icon={<LuClipboardList />} title="Encomenda não encontrada" action={<Link to="admin-encomendas" className="btn btn-primary">Ver encomendas</Link>} />;
   const selected = status || order.status;
-  const apply = () => { updateOrderStatus(order.id, selected as OrderStatus); setStatus(''); toast(`Estado alterado para «${ORDER_STATUS_LABELS[selected as OrderStatus]}».`); };
+  const apply = () => {
+    updateOrderStatus(order.id, selected as OrderStatus)
+      .then(() => { setStatus(''); toast(`Estado alterado para «${ORDER_STATUS_LABELS[selected as OrderStatus]}».`); })
+      .catch((e) => toast(errorText(e), 'error'));
+  };
+  const setPayment = (ps: PaymentStatus) => {
+    updatePaymentStatus(order.id, ps)
+      .then(() => toast(`Pagamento marcado como «${PAYMENT_STATUS_LABELS[ps]}».`))
+      .catch((e) => toast(errorText(e), 'error'));
+  };
 
   return (
     <>
@@ -126,7 +136,16 @@ export function OrderAdminDetail({ id }: { id: string }) {
             <div className="mt-4"><OrderTotals order={order} /></div>
           </section>
           <OrderFacts order={order} />
-          {order.simulated && <Notice tone="warn">Pagamento simulado. O estado do pagamento só deve mudar para «Pago» com confirmação verificada do fornecedor de pagamentos, por isso não é editável aqui.</Notice>}
+          <section className="panel p-5 grid gap-3">
+            <h2 className="font-bold text-lg">Pagamento</h2>
+            <p className="text-[0.9rem] text-muted">Método escolhido: <strong className="text-ink">{paymentLabel(order.paymentMethod)}</strong>. Envie ao cliente os dados de pagamento e marque «Pago» quando o receber.</p>
+            <div className="flex flex-wrap gap-2" role="group" aria-label="Estado do pagamento">
+              {(Object.keys(PAYMENT_STATUS_LABELS) as PaymentStatus[]).map((ps) => (
+                <button key={ps} type="button" aria-pressed={order.paymentStatus === ps} onClick={() => order.paymentStatus !== ps && setPayment(ps)}
+                  className={`btn btn-sm ${order.paymentStatus === ps ? 'btn-primary' : 'btn-outline'}`}>{PAYMENT_STATUS_LABELS[ps]}</button>
+              ))}
+            </div>
+          </section>
         </div>
         <div className="grid gap-6">
           <section className="panel p-5 grid gap-3">
@@ -150,7 +169,7 @@ export function OrderAdminDetail({ id }: { id: string }) {
                 {order.notes.map((n, i) => <li key={i} className="rounded-xl bg-cream p-3 text-[0.92rem]">{n.text}<span className="block text-[0.75rem] text-muted mt-1 num">{formatDateTime(n.at)}</span></li>)}
               </ul>
             )}
-            <form className="grid gap-2" onSubmit={(e) => { e.preventDefault(); if (!note.trim()) return; addOrderNote(order.id, note.trim()); setNote(''); toast('Nota adicionada.'); }}>
+            <form className="grid gap-2" onSubmit={(e) => { e.preventDefault(); if (!note.trim()) return; addOrderNote(order.id, note.trim()).then(() => { setNote(''); toast('Nota adicionada.'); }).catch((err) => toast(errorText(err), 'error')); }}>
               <label htmlFor="nota" className="sr-only">Nova nota</label>
               <textarea id="nota" className="input" rows={3} placeholder="Escreva uma nota para a equipa" value={note} onChange={(e) => setNote(e.target.value)} />
               <button type="submit" className="btn btn-outline" disabled={!note.trim()}>Adicionar nota</button>

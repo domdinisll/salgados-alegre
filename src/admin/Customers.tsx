@@ -1,6 +1,6 @@
 import { Fragment, useState } from 'react';
 import { LuSearch, LuUsers, LuChevronDown } from 'react-icons/lu';
-import { toast, useCustomers, useOrders } from '../state';
+import { errorText, toast, useCustomers, useOrders } from '../state';
 import { updateCustomer } from '../services/auth';
 import { formatDate, formatEuro, normalize } from '../lib/format';
 import { EmptyState, StatusBadge } from '../components/ui';
@@ -55,7 +55,7 @@ export function CustomersAdmin() {
                         {c.type === 'revenda' ? (
                           <label className="inline-flex items-center gap-2 cursor-pointer whitespace-nowrap">
                             <input type="checkbox" role="switch" className="w-5 h-5 accent-brand-700" checked={c.wholesaleApproved}
-                              onChange={(e) => { updateCustomer(c.id, { wholesaleApproved: e.target.checked }); toast(e.target.checked ? `Preço revenda ativado para ${c.businessName || c.name}.` : `Preço revenda desativado para ${c.businessName || c.name}.`); }}
+                              onChange={(e) => { const on = e.target.checked; updateCustomer(c.id, { wholesaleApproved: on }).then(() => toast(on ? `Preço revenda ativado para ${c.businessName || c.name}.` : `Preço revenda desativado para ${c.businessName || c.name}.`)).catch((err) => toast(errorText(err), 'error')); }}
                               aria-label={`Preço revenda para ${c.businessName || c.name}`} />
                             <span className="text-[0.85rem]">{c.wholesaleApproved ? 'Aprovado' : 'Por aprovar'}</span>
                           </label>

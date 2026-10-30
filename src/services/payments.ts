@@ -1,71 +1,42 @@
-import type { Order, PaymentMethodId } from '../types';
+import type { PaymentMethodId } from '../types';
 
 /**
- * Arquitetura de pagamentos modular.
- * Cada método é servido por um `PaymentProvider`. Na demonstração, todos usam o
- * `SimulatedProvider`, que NÃO processa pagamentos nem recolhe dados de cartão.
+ * Métodos de pagamento.
+ * No lançamento a loja usa PAGAMENTO APÓS CONFIRMAÇÃO: o cliente faz a encomenda, a loja confirma
+ * e envia os dados para pagamento por MB WAY ou transferência. O estado «Pago» é marcado no painel
+ * pela loja, depois de verificar o pagamento.
  *
- * Para produção:
- *  - escolher um fornecedor com suporte para Portugal (Multibanco, MB WAY, cartões e carteiras digitais);
- *  - criar o pagamento NO SERVIDOR, com o total recalculado pelo servidor;
- *  - recolher dados de cartão apenas nos campos/página alojados pelo fornecedor;
- *  - marcar a encomenda como "Pago" só após um webhook assinado e verificado.
+ * Para ativar pagamentos online (Multibanco, MB WAY automático, cartões, carteiras digitais):
+ * contratar um fornecedor de pagamentos, criar o pagamento NO SERVIDOR e marcar «Pago» apenas
+ * por webhook verificado. Depois, acrescentar o método a LIVE_PAYMENT_METHODS e à função
+ * place_order (supabase/schema.sql).
  */
 
 export interface PaymentMethodInfo {
   id: PaymentMethodId;
   label: string;
-  short: string;
   description: string;
-  /** Nota sobre requisitos técnicos de disponibilidade. */
-  availabilityNote?: string;
 }
 
 export const PAYMENT_METHODS: PaymentMethodInfo[] = [
-  { id: 'mbway', label: 'MB WAY', short: 'MB WAY', description: 'Confirme o pagamento na app MB WAY com o seu número de telemóvel.' },
-  { id: 'multibanco', label: 'Multibanco', short: 'MB', description: 'Receba uma entidade e referência para pagar no multibanco ou homebanking.' },
-  { id: 'cartao', label: 'Cartão de crédito ou débito', short: 'Cartão', description: 'Visa, Mastercard e outros cartões, numa página segura do fornecedor de pagamentos.' },
-  { id: 'applepay', label: 'Apple Pay', short: 'Apple Pay', description: 'Pagamento rápido em dispositivos Apple compatíveis.', availabilityNote: 'Disponível apenas no Safari e em dispositivos Apple compatíveis, depois de configurado com o fornecedor de pagamentos.' },
-  { id: 'googlepay', label: 'Google Pay', short: 'Google Pay', description: 'Pagamento rápido com a sua conta Google.', availabilityNote: 'Disponível apenas em navegadores e dispositivos compatíveis, depois de configurado com o fornecedor de pagamentos.' },
-  { id: 'paypal', label: 'PayPal', short: 'PayPal', description: 'Pague com a sua conta PayPal.' },
+  { id: 'mbway', label: 'MB WAY', description: 'Depois de confirmarmos a encomenda, enviamos-lhe o pedido de pagamento por MB WAY.' },
+  { id: 'transferencia', label: 'Transferência bancária', description: 'Depois de confirmarmos a encomenda, enviamos-lhe o IBAN para transferência.' },
+  { id: 'multibanco', label: 'Multibanco', description: 'Pagamento por referência Multibanco.' },
+  { id: 'cartao', label: 'Cartão de crédito ou débito', description: 'Pagamento com cartão.' },
+  { id: 'applepay', label: 'Apple Pay', description: 'Pagamento com Apple Pay.' },
+  { id: 'googlepay', label: 'Google Pay', description: 'Pagamento com Google Pay.' },
+  { id: 'paypal', label: 'PayPal', description: 'Pagamento com PayPal.' },
 ];
 
-export interface PaymentStartResult {
-  kind: 'simulated';
-  /** Texto a mostrar ao cliente sobre o que aconteceria num pagamento real. */
-  realWorldNote: string;
+/** Métodos disponíveis na loja neste momento (têm de coincidir com place_order no servidor). */
+export const LIVE_PAYMENT_METHODS: PaymentMethodId[] = ['mbway', 'transferencia'];
+
+export function paymentLabel(id: PaymentMethodId): string {
+  return PAYMENT_METHODS.find((m) => m.id === id)?.label ?? id;
 }
 
-export interface PaymentProvider {
-  id: string;
-  supports(method: PaymentMethodId): boolean;
-  /** Em produção: chamada ao servidor que cria a intenção de pagamento. */
-  start(order: Order): Promise<PaymentStartResult>;
-}
-
-const REAL_WORLD_NOTES: Record<PaymentMethodId, string> = {
-  mbway: 'Num pagamento real, receberia um pedido de pagamento na app MB WAY para aprovar.',
-  multibanco: 'Num pagamento real, seriam geradas uma entidade e uma referência Multibanco para pagar.',
-  cartao: 'Num pagamento real, seria redirecionado para a página segura do fornecedor de pagamentos para introduzir os dados do cartão.',
-  applepay: 'Num pagamento real, seria aberta a folha de pagamento Apple Pay do seu dispositivo.',
-  googlepay: 'Num pagamento real, seria aberta a janela de pagamento Google Pay.',
-  paypal: 'Num pagamento real, seria redirecionado para o PayPal para concluir o pagamento.',
-};
-
-export const SimulatedProvider: PaymentProvider = {
-  id: 'simulado',
-  supports: () => true,
-  async start(order) {
-    await new Promise((r) => setTimeout(r, 900));
-    return { kind: 'simulated', realWorldNote: REAL_WORLD_NOTES[order.paymentMethod] };
-  },
-};
-
-export function providerFor(method: PaymentMethodId): PaymentProvider {
-  // Ponto único para ligar fornecedores reais por método.
-  return [SimulatedProvider].find((p) => p.supports(method))!;
-}
-
-export function realWorldNote(method: PaymentMethodId): string {
-  return REAL_WORLD_NOTES[method];
+export function paymentNextStep(id: PaymentMethodId): string {
+  if (id === 'mbway') return 'Vamos confirmar a sua encomenda e enviar-lhe o pedido de pagamento por MB WAY para o número indicado.';
+  if (id === 'transferencia') return 'Vamos confirmar a sua encomenda e enviar-lhe os dados para transferência bancária.';
+  return 'Vamos confirmar a sua encomenda e indicar-lhe como pagar.';
 }

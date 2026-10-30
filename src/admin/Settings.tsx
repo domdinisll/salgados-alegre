@@ -1,10 +1,11 @@
 import { useState } from 'react';
 import { LuPlus, LuTrash2 } from 'react-icons/lu';
 import type { DeliveryZone, DiscountCode, Settings } from '../types';
-import { resetDemo, settingsStore, toast, useSettings } from '../state';
+import { errorText, settingsStore, toast, useSettings } from '../state';
+import { saveSettings } from '../services/catalog';
 import { earliestDeliveryDate } from '../lib/delivery';
 import { formatDate, formatDateLong, formatEuro, uid, weekdayName } from '../lib/format';
-import { ConfirmDialog, Field, Notice } from '../components/ui';
+import { Field, Notice } from '../components/ui';
 import { Link } from '../router';
 import { AdminHeader } from './AdminApp';
 
@@ -12,7 +13,7 @@ function useDraft<K extends keyof Settings>(key: K) {
   const s = useSettings();
   const [draft, setDraft] = useState<Settings[K]>(() => structuredClone(s[key]));
   const dirty = JSON.stringify(draft) !== JSON.stringify(s[key]);
-  const save = () => { settingsStore.set((x) => ({ ...x, [key]: draft })); toast('Definições guardadas.'); };
+  const save = () => { saveSettings({ ...settingsStore.get(), [key]: draft }).then(() => toast('Definições guardadas.')).catch((e) => toast(errorText(e), 'error')); };
   const discard = () => setDraft(structuredClone(s[key]));
   return { draft, setDraft, dirty, save, discard };
 }
@@ -190,7 +191,6 @@ export function PricingSettings() {
 
 export function BusinessSettings() {
   const { draft: b, setDraft, dirty, save, discard } = useDraft('business');
-  const [confirm, setConfirm] = useState(false);
   const set = <K extends keyof Settings['business']>(k: K, v: Settings['business'][K]) => setDraft((x) => ({ ...x, [k]: v }));
   return (
     <>
@@ -232,15 +232,9 @@ export function BusinessSettings() {
             </label>
             <Notice tone="warn">Faturação certificada e cálculo de IVA por linha têm de ser feitos por software de faturação certificado, ligado ao servidor.</Notice>
           </section>
-          <section className="panel p-5 grid gap-3">
-            <h2 className="font-bold text-lg">Dados de demonstração</h2>
-            <p className="text-muted text-[0.92rem]">Repõe produtos, encomendas, clientes e definições de exemplo neste navegador.</p>
-            <button type="button" className="btn btn-outline text-danger w-fit" onClick={() => setConfirm(true)}>Repor dados de exemplo</button>
-          </section>
         </div>
       </div>
       <SaveBar dirty={dirty} save={save} discard={discard} />
-      <ConfirmDialog open={confirm} onClose={() => setConfirm(false)} title="Repor os dados de exemplo?" confirmLabel="Repor dados" message="Todas as alterações feitas neste navegador serão perdidas." onConfirm={resetDemo} />
     </>
   );
 }

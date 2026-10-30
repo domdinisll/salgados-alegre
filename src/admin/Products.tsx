@@ -2,7 +2,8 @@ import { useState } from 'react';
 import { LuPlus, LuPencil, LuChevronLeft, LuTrash2, LuUpload, LuPackage, LuSearch } from 'react-icons/lu';
 import type { Availability, PriceTier, Product } from '../types';
 import { CATEGORIES, PREP_OPTIONS } from '../config/defaults';
-import { productsStore, toast, useProducts } from '../state';
+import { errorText, toast, useProducts } from '../state';
+import { deleteProduct, saveProduct } from '../services/catalog';
 import { formatEuro, normalize } from '../lib/format';
 import { Link, navigate } from '../router';
 import { AvailabilityBadge, ConfirmDialog, EmptyState, Field, Notice } from '../components/ui';
@@ -21,8 +22,9 @@ export function ProductsAdmin() {
   const [toDelete, setToDelete] = useState<Product | null>(null);
   const list = products.filter((p) => !q || normalize(`${p.name} ${p.category}`).includes(normalize(q)));
   const toggle = (p: Product) => {
-    productsStore.set((ps) => ps.map((x) => (x.id === p.id ? { ...x, active: !x.active } : x)));
-    toast(p.active ? `${p.name} desativado. Deixou de aparecer na loja.` : `${p.name} ativado.`);
+    saveProduct({ ...p, active: !p.active })
+      .then(() => toast(p.active ? `${p.name} desativado. Deixou de aparecer na loja.` : `${p.name} ativado.`))
+      .catch((e) => toast(errorText(e), 'error'));
   };
   return (
     <>
@@ -73,7 +75,7 @@ export function ProductsAdmin() {
       )}
       <ConfirmDialog open={!!toDelete} onClose={() => setToDelete(null)} title={`Apagar ${toDelete?.name ?? ''}?`} confirmLabel="Apagar produto"
         message="O produto é removido do catálogo. As encomendas antigas mantêm o registo. Se quiser apenas escondê-lo da loja, use «Desativar»."
-        onConfirm={() => { if (toDelete) { productsStore.set((ps) => ps.filter((p) => p.id !== toDelete.id)); toast(`${toDelete.name} apagado.`); } }} />
+        onConfirm={() => { if (toDelete) deleteProduct(toDelete.id).then(() => toast(`${toDelete.name} apagado.`)).catch((e) => toast(errorText(e), 'error')); }} />
     </>
   );
 }
@@ -97,6 +99,7 @@ export function ProductEditor({ id }: { id: string }) {
   const [stock, setStock] = useState(p.stock === null ? '' : String(p.stock));
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [confirmDelete, setConfirmDelete] = useState(false);
+  const [saving, setSaving] = useState(false);
   if (!existing && !isNew) return <EmptyState icon={<LuPackage />} title="Produto não encontrado" action={<Link to="admin-produtos" className="btn btn-primary">Ver produtos</Link>} />;
 
   const set = <K extends keyof Product>(k: K, v: Product[K]) => setP((x) => ({ ...x, [k]: v }));
@@ -116,15 +119,17 @@ export function ProductEditor({ id }: { id: string }) {
     setErrors(er);
     if (Object.keys(er).length) { toast('Corrija os campos assinalados.', 'error'); return; }
     const final: Product = { ...p, slug, name: p.name.trim(), packSizes: [...new Set(sizes)].sort((a, b) => a - b), stock: stock === '' ? null : parseInt(stock, 10), id: p.id || `p-${slug}`, sampleData: false };
-    productsStore.set((ps) => (isNew ? [...ps, final] : ps.map((x) => (x.id === final.id ? final : x))));
-    toast(isNew ? 'Produto criado.' : 'Alterações guardadas.');
-    navigate('admin-produtos');
+    setSaving(true);
+    saveProduct(final)
+      .then(() => { toast(isNew ? 'Produto criado.' : 'Alterações guardadas.'); navigate('admin-produtos'); })
+      .catch((e) => toast(errorText(e), 'error'))
+      .finally(() => setSaving(false));
   }
 
   function onImage(file: File | undefined) {
     if (!file) return;
     if (!file.type.startsWith('image/')) return toast('Escolha um ficheiro de imagem (JPG, PNG ou WebP).', 'error');
-    if (file.size > 1.5 * 1024 * 1024) return toast('A imagem tem de ter menos de 1,5 MB nesta demonstração.', 'error');
+    if (file.size > 400 * 1024) return toast('A imagem tem de ter menos de 400 KB. Reduza o tamanho e tente novamente.', 'error');
     const r = new FileReader();
     r.onload = () => set('imageUrl', String(r.result));
     r.readAsDataURL(file);
@@ -136,7 +141,7 @@ export function ProductEditor({ id }: { id: string }) {
       <AdminHeader title={isNew ? 'Novo produto' : `Editar ${existing!.name}`} actions={
         <>
           {!isNew && <button type="button" className="btn btn-outline text-danger" onClick={() => setConfirmDelete(true)}><LuTrash2 aria-hidden />Apagar</button>}
-          <button type="button" className="btn btn-primary" onClick={save}>Guardar produto</button>
+          <button type="button" className="btn btn-primary" onClick={save} disabled={saving}>{saving ? 'A guardar…' : 'Guardar produto'}</button>
         </>
       } />
       {p.sampleData && <Notice tone="warn" className="mb-5">Este produto tem dados de exemplo. Ao guardar, deixa de ser assinalado como exemplo na loja.</Notice>}
@@ -168,12 +173,12 @@ export function ProductEditor({ id }: { id: string }) {
               {PREP_OPTIONS.map((o) => o.id).map((k) => (
                 <div key={k} className={`rounded-xl border-2 p-4 ${p.prep[k]?.enabled ? 'border-brand-200 bg-brand-50/50' : 'border-line'}`}>
                   <label className="flex items-center gap-2 font-semibold">
-                    <input type="checkbox" className="w-5 h-5 accent-brand-700" checked={!!p.prep[k]?.enabled} onChange={(e) => set('prep', { ...p.prep, [k]: { unitPrice: 0, ...p.prep[k], enabled: e.target.checked } })} />
+                    <input type="checkbox" className="w-5 h-5 accent-brand-700" checked={!!p.prep[k]?.enabled} onChange={(e) => set('prep', { ...p.prep, [k]: { ...(p.prep[k] ?? { unitPrice: 0 }), enabled: e.target.checked } })} />
                     {PREP_OPTIONS.find((o) => o.id === k)!.label}
                   </label>
                   <label htmlFor={`preco-${k}`} className="field-label mt-3">Preço por unidade (€)</label>
                   <input id={`preco-${k}`} type="number" step="0.01" min="0" className="input num" disabled={!p.prep[k]?.enabled} value={p.prep[k]?.unitPrice ?? 0}
-                    onChange={(e) => set('prep', { ...p.prep, [k]: { enabled: true, ...p.prep[k], unitPrice: Number(e.target.value) } })} />
+                    onChange={(e) => set('prep', { ...p.prep, [k]: { ...(p.prep[k] ?? { enabled: true }), unitPrice: Number(e.target.value) } })} />
                 </div>
               ))}
             </div>
@@ -221,7 +226,7 @@ export function ProductEditor({ id }: { id: string }) {
                 </select>
               </div>
             )}
-            <p className="field-hint !mt-0">Na demonstração, a imagem fica guardada no navegador. Em produção, use armazenamento de ficheiros (por exemplo, um bucket com CDN).</p>
+            <p className="field-hint !mt-0">Use uma fotografia em JPG ou WebP, até 400 KB (por exemplo 1200×900 px).</p>
           </section>
           <section className="panel p-5 grid gap-4">
             <h2 className="font-bold text-lg">Disponibilidade</h2>
@@ -238,11 +243,11 @@ export function ProductEditor({ id }: { id: string }) {
               </label>
             ))}
           </section>
-          <button type="submit" className="btn btn-primary btn-lg">Guardar produto</button>
+          <button type="submit" className="btn btn-primary btn-lg" disabled={saving}>{saving ? 'A guardar…' : 'Guardar produto'}</button>
         </div>
       </form>
       <ConfirmDialog open={confirmDelete} onClose={() => setConfirmDelete(false)} title={`Apagar ${p.name}?`} confirmLabel="Apagar produto"
-        message="O produto é removido do catálogo. As encomendas antigas mantêm o registo." onConfirm={() => { productsStore.set((ps) => ps.filter((x) => x.id !== p.id)); toast('Produto apagado.'); navigate('admin-produtos'); }} />
+        message="O produto é removido do catálogo. As encomendas antigas mantêm o registo." onConfirm={() => { deleteProduct(p.id).then(() => { toast('Produto apagado.'); navigate('admin-produtos'); }).catch((e) => toast(errorText(e), 'error')); }} />
     </>
   );
 }
