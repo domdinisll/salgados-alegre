@@ -98,7 +98,7 @@ export function AdminApp({ route }: { route: string }) {
       <main id="admin-main" tabIndex={-1} className="min-w-0 outline-none">
         <div className="bg-accent-50 border-b border-accent-100 text-[0.85rem] text-accent-800">
           <div className="px-[max(16px,env(safe-area-inset-left))] lg:px-8 py-2 flex flex-wrap justify-between gap-2">
-            <span>Pagamento após confirmação: marque «Pago» na encomenda quando receber o pagamento.</span>
+            <span>Pagamentos por MB WAY e transferência: marque «Pago» na encomenda quando o pagamento chegar.</span>
             <span className="flex gap-4 lg:hidden">
               <Link to="" className="font-semibold underline">Ver loja</Link>
               <button type="button" className="font-semibold underline" onClick={async () => { await logout(); navigate(''); }}>Sair</button>

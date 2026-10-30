@@ -283,7 +283,7 @@ export function Checkout() {
     ),
     3: (
       <form onSubmit={submit} noValidate className="grid gap-6">
-        <Notice tone="info" title="Pagamento após confirmação">
+        <Notice tone="info" title="Pagamento por MB WAY ou transferência">
           Não paga nada no site. Os dados para pagamento aparecem na confirmação e seguem por email.
         </Notice>
         <PaymentMethodSelector value={f.paymentMethod} onChange={(m) => set('paymentMethod', m)} error={err('paymentMethod')} />

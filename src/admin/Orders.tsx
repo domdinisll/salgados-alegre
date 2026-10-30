@@ -150,7 +150,7 @@ export function OrderAdminDetail({ id }: { id: string }) {
           <OrderFacts order={order} />
           <section className="panel p-5 grid gap-3">
             <h2 className="font-bold text-lg">Pagamento</h2>
-            <p className="text-[0.9rem] text-muted">Método escolhido: <strong className="text-ink">{paymentLabel(order.paymentMethod)}</strong>. Envie ao cliente os dados de pagamento e marque «Pago» quando o receber.</p>
+            <p className="text-[0.9rem] text-muted">Método escolhido: <strong className="text-ink">{paymentLabel(order.paymentMethod)}</strong>. O cliente recebe os dados de pagamento por email. Marque «Pago» quando confirmar que o pagamento chegou.</p>
             <div className="flex flex-wrap gap-2" role="group" aria-label="Estado do pagamento">
               {(Object.keys(PAYMENT_STATUS_LABELS) as PaymentStatus[]).map((ps) => (
                 <button key={ps} type="button" aria-pressed={order.paymentStatus === ps} onClick={() => order.paymentStatus !== ps && setPayment(ps)}
