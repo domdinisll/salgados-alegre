@@ -60,7 +60,7 @@ export function Wholesale() {
               ['Packs até', `${Math.max(...products.flatMap((p) => p.packSizes))} un.`],
               ['Miniaturas', `100 un. desde ${formatEuro(Math.min(...products.filter((p) => p.active && p.packSizes.includes(100)).map((p) => fromPrice(p) * 100)))}`],
               ['Variedades', `${products.filter((p) => p.active).length} salgados`],
-              ['Entrega grátis', `desde ${formatEuro(settings.delivery.freeThreshold)}`],
+              ['Entregas', 'Até 50 km de Amora'],
             ].map(([k, v]) => (
               <div key={k} className="rounded-2xl bg-brand-900/50 border border-cream/10 p-5">
                 <dt className="text-[0.85rem] text-cream/70">{k}</dt>

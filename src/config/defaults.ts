@@ -66,7 +66,7 @@ export const DEFAULT_SETTINGS: Settings = {
   },
   delivery: {
     standardFee: 5,
-    freeThreshold: 30,
+    freeThreshold: 0, // 0 = sem entrega grátis
     minOrderAmount: 15,
     leadTimeDays: 2,
     cutoffHour: 15,
@@ -75,10 +75,11 @@ export const DEFAULT_SETTINGS: Settings = {
     timeSlots: ['09:00 – 12:00', '12:00 – 15:00'],
     maxDaysAhead: 60,
     zones: [
-      // Aproximação por código postal de um raio de 50 km a partir de 2845-340 (Amora):
-      // Lisboa, Loures/Odivelas, Amadora, Sintra, Cascais, Oeiras, Mafra, Vila Franca de Xira,
-      // Arruda dos Vinhos, Margem Sul, Setúbal, Palmela, Sesimbra, Benavente e Samora Correia.
-      { id: 'z1', name: 'Até 50 km de Amora', ranges: '1000-1999, 2130-2139, 2600-2999', fee: 5, enabled: true },
+      // Bandas de distância (linha reta) a partir de 2845-340 (Amora), por código postal (4 primeiros dígitos).
+      { id: 'z20', name: 'Até 20 km', ranges: '1000-1999, 2650-2654, 2675-2679, 2700-2704, 2720-2724, 2730-2734, 2740-2749, 2780-2784, 2790-2799, 2800-2889, 2925-2929, 2950-2959, 2975-2979', fee: 5, enabled: true },
+      { id: 'z30', name: '20 a 30 km', ranges: '2620-2629, 2645-2649, 2660-2664, 2670-2674, 2680-2699, 2725-2729, 2735-2739, 2750-2779, 2785-2789, 2890-2924, 2930-2949, 2970-2974', fee: 5, minOrder: 50, enabled: true },
+      { id: 'z40', name: '30 a 40 km', ranges: '2600-2619, 2630-2639, 2665-2669, 2705-2719, 2960-2969', fee: 7, minOrder: 50, enabled: true },
+      { id: 'z50', name: '40 a 50 km', ranges: '2130-2139, 2640-2644, 2655-2659, 2980-2999', fee: 9, minOrder: 50, enabled: true },
     ],
     restrictionsNote: 'Entregamos num raio de cerca de 50 km de Amora (Seixal), de segunda a sexta-feira.',
   },

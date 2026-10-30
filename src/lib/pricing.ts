@@ -137,16 +137,19 @@ export function computeTotals(items: CartItem[], products: Product[], settings: 
       : 'Lamentamos, ainda não fazemos entregas neste código postal.';
   }
 
-  const freeDelivery = items.length > 0 && discountedSubtotal >= d.freeThreshold;
+  const freeDelivery = items.length > 0 && d.freeThreshold > 0 && discountedSubtotal >= d.freeThreshold;
   const baseFee = zone ? zone.fee : d.standardFee;
   const deliveryFee = items.length === 0 || freeDelivery ? 0 : round2(baseFee);
-  const remainingForFreeDelivery = freeDelivery ? 0 : round2(Math.max(0, d.freeThreshold - discountedSubtotal));
+  const remainingForFreeDelivery = freeDelivery || d.freeThreshold <= 0 ? 0 : round2(Math.max(0, d.freeThreshold - discountedSubtotal));
 
   const errors: string[] = [];
   for (const l of lines) if (l.error) errors.push(l.error);
   if (items.length === 0) errors.push('O carrinho está vazio.');
-  if (items.length > 0 && discountedSubtotal < d.minOrderAmount) {
-    errors.push(`O valor mínimo de encomenda é ${formatEuro(d.minOrderAmount)}. Faltam ${formatEuro(d.minOrderAmount - discountedSubtotal)}.`);
+  const minOrder = zone?.minOrder ?? d.minOrderAmount;
+  if (items.length > 0 && discountedSubtotal < minOrder) {
+    errors.push(zone?.minOrder !== undefined
+      ? `Para entregas na zona ${zone.name}, o valor mínimo de encomenda é ${formatEuro(minOrder)}. Faltam ${formatEuro(minOrder - discountedSubtotal)}.`
+      : `O valor mínimo de encomenda é ${formatEuro(minOrder)}. Faltam ${formatEuro(minOrder - discountedSubtotal)}.`);
   }
   if (!settings.business.storeOpen) errors.push(settings.business.closedMessage);
 

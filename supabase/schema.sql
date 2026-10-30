@@ -139,7 +139,7 @@ declare
   t jsonb; wholesale boolean := false; wpct numeric;
   lines jsonb := '[]'::jsonb;
   merch numeric := 0; pdisc numeric := 0; after_disc numeric; code_disc numeric := 0; code_txt text := null; c jsonb;
-  discounted numeric; fee numeric; free boolean;
+  discounted numeric; fee numeric; free boolean; min_order numeric;
   pc text; digits text; prefix int; zone jsonb := null; z jsonb; r text; a int; b int;
   now_l timestamp := (now() at time zone 'Europe/Lisbon'); today date := (now() at time zone 'Europe/Lisbon')::date;
   earliest date; dd date; lim date;
@@ -245,10 +245,14 @@ begin
   end loop;
   if zone is null then perform _fail('Lamentamos, ainda não fazemos entregas neste código postal.'); end if;
 
-  free := discounted >= coalesce((d->>'freeThreshold')::numeric, 0);
+  -- Entrega grátis só se houver limiar configurado (> 0).
+  free := coalesce((d->>'freeThreshold')::numeric, 0) > 0 and discounted >= (d->>'freeThreshold')::numeric;
   fee := case when free then 0 else round((zone->>'fee')::numeric, 2) end;
-  if discounted < coalesce((d->>'minOrderAmount')::numeric, 0) then
-    perform _fail('O valor mínimo de encomenda é ' || replace(to_char((d->>'minOrderAmount')::numeric, 'FM999990.00'), '.', ',') || ' €.');
+  -- Encomenda mínima: a da zona, se existir; senão a geral.
+  min_order := coalesce((zone->>'minOrder')::numeric, (d->>'minOrderAmount')::numeric, 0);
+  if discounted < min_order then
+    perform _fail(case when zone ? 'minOrder' then 'Para entregas na zona ' || (zone->>'name') || ', o' else 'O' end
+      || ' valor mínimo de encomenda é ' || replace(to_char(min_order, 'FM999990.00'), '.', ',') || ' €.');
   end if;
 
   -- Dados do cliente e morada

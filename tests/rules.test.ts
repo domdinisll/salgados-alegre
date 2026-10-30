@@ -34,36 +34,37 @@ test('preços do catálogo real', () => {
   assert.equal(P.length, 22);
 });
 
-test('abaixo do limiar: cobra portes da zona e indica quanto falta', () => {
-  // 25 coxinhas médias fritas × 1,00 € = 25,00 €
-  const t = computeTotals([item('m-coxinha', 25, 1, 'frito')], P, S, { wholesale: false, postalCode: '2845-123', today: NOW });
-  assert.equal(t.merchandiseSubtotal, 25);
-  assert.equal(t.deliveryFee, 5);
-  assert.equal(t.remainingForFreeDelivery, 5);
-  assert.equal(t.total, 30);
-  assert.equal(t.canCheckout, true);
+test('taxas por distância e mínimo de 50 € acima de 20 km', () => {
+  const m25 = [item('m-coxinha', 25, 1, 'frito')]; // 25 €
+  const a = computeTotals(m25, P, S, { wholesale: false, postalCode: '2845-340', today: NOW });
+  assert.equal(a.zone?.name, 'Até 20 km');
+  assert.equal(a.deliveryFee, 5);
+  assert.equal(a.total, 30);
+  assert.equal(a.canCheckout, true);
+  const b = computeTotals(m25, P, S, { wholesale: false, postalCode: '2750-100', today: NOW }); // Cascais
+  assert.equal(b.canCheckout, false);
+  assert.ok(b.errors.some((e) => e.includes('50,00')));
+  const g = [item('g-coxinha', 50, 1, 'frito')]; // 70 €
+  assert.equal(computeTotals(g, P, S, { wholesale: false, postalCode: '2750-100', today: NOW }).deliveryFee, 5);
+  assert.equal(computeTotals(g, P, S, { wholesale: false, postalCode: '2710-100', today: NOW }).deliveryFee, 7); // Sintra
+  const d = computeTotals(g, P, S, { wholesale: false, postalCode: '2655-100', today: NOW }); // Ericeira
+  assert.equal(d.deliveryFee, 9);
+  assert.equal(d.total, 79);
+  assert.equal(d.freeDelivery, false); // sem entrega grátis
 });
 
-test('igual ou acima do limiar: entrega gratuita', () => {
-  // 50 coxinhas grandes congeladas (65 €) + 100 mini coxinhas fritas (25 €) = 90 €
-  const t = computeTotals([item('g-coxinha-queijo', 50, 1, 'congelado'), item('n-coxinha-frango', 100, 1, 'frito')], P, S, { wholesale: false, postalCode: '2845-123', today: NOW });
-  assert.equal(t.discountedSubtotal, 90);
-  assert.equal(t.deliveryFee, 0);
-  assert.equal(t.freeDelivery, true);
-  assert.equal(t.canCheckout, true);
-});
-
-test('limiar calculado depois dos descontos', () => {
+test('entrega grátis só quando há limiar configurado, calculado depois dos descontos', () => {
   const s2: Settings = structuredClone(S);
+  s2.delivery.freeThreshold = 30;
   s2.pricing.codes = [{ id: 'x', code: 'TESTE10', type: 'percent', value: 10, minSubtotal: 0, active: true, validUntil: '', description: '' }];
-  // 100 mini congeladas (20 €) + 10 empadas (10 €) = 30 € → grátis; com 10% desce para 27 € e paga portes
-  const items = [item('n-salsicha', 100, 1, 'congelado'), item('a-empada', 10, 1, 'pronto')];
-  const t = computeTotals(items, P, s2, { wholesale: false, today: NOW });
+  const items = [item('n-salsicha', 100, 1, 'congelado'), item('a-empada', 10, 1, 'pronto')]; // 30 €
+  const t = computeTotals(items, P, s2, { wholesale: false, postalCode: '2845-340', today: NOW });
   assert.equal(t.freeDelivery, true);
-  const t2 = computeTotals(items, P, s2, { wholesale: false, discountCode: 'teste10', today: NOW });
+  assert.equal(t.deliveryFee, 0);
+  const t2 = computeTotals(items, P, s2, { wholesale: false, discountCode: 'teste10', postalCode: '2845-340', today: NOW });
   assert.equal(t2.codeDiscount, 3);
   assert.equal(t2.freeDelivery, false);
-  assert.equal(t2.deliveryFee, S.delivery.standardFee);
+  assert.equal(t2.deliveryFee, 5);
 });
 
 test('preço revenda só se aplica quando configurado e a contas aprovadas', () => {

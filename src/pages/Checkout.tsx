@@ -200,7 +200,7 @@ export function Checkout() {
           <Field label="Localidade" required error={err('city')}>{(p) => <input {...p} className="input" autoComplete="address-level2" value={f.city} onChange={(e) => set('city', e.target.value)} />}</Field>
         </div>
         {zone && (zone.ok ? (
-          <Notice tone="success">Fazemos entregas nesta zona: {zone.zone.name}. Taxa de entrega: {t.freeDelivery ? 'grátis' : formatEuro(zone.zone.fee)}.</Notice>
+          <Notice tone="success">Entregamos na sua zona ({zone.zone.name}). Taxa de entrega: {t.freeDelivery ? 'grátis' : formatEuro(zone.zone.fee)}. Encomenda mínima: {formatEuro(zone.zone.minOrder ?? settings.delivery.minOrderAmount)}.</Notice>
         ) : (
           <Notice tone="error" title="Ainda não entregamos neste código postal">
             {settings.delivery.restrictionsNote} Se tem um negócio nesta zona, contacte-nos para sabermos do seu interesse.

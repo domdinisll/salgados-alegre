@@ -48,8 +48,8 @@ export function DeliverySettings() {
           <h2 className="font-bold text-lg">Valores</h2>
           <div className="grid sm:grid-cols-3 gap-4">
             <Field label="Taxa de entrega padrão (€)" required hint="Usada quando ainda não há código postal.">{(a) => <input {...a} type="number" step="0.5" min="0" className="input num" value={d.standardFee} onChange={(e) => set('standardFee', num(e.target.value))} />}</Field>
-            <Field label="Entrega grátis a partir de (€)" required>{(a) => <input {...a} type="number" step="1" min="0" className="input num" value={d.freeThreshold} onChange={(e) => set('freeThreshold', num(e.target.value))} />}</Field>
-            <Field label="Encomenda mínima (€)" required>{(a) => <input {...a} type="number" step="1" min="0" className="input num" value={d.minOrderAmount} onChange={(e) => set('minOrderAmount', num(e.target.value))} />}</Field>
+            <Field label="Entrega grátis a partir de (€)" required hint="0 = sem entrega grátis.">{(a) => <input {...a} type="number" step="1" min="0" className="input num" value={d.freeThreshold} onChange={(e) => set('freeThreshold', num(e.target.value))} />}</Field>
+            <Field label="Encomenda mínima geral (€)" required hint="Usada nas zonas sem mínimo próprio.">{(a) => <input {...a} type="number" step="1" min="0" className="input num" value={d.minOrderAmount} onChange={(e) => set('minOrderAmount', num(e.target.value))} />}</Field>
           </div>
           <Notice tone="info">O limiar de entrega grátis é comparado com o subtotal dos produtos depois dos descontos (quantidade, revenda e códigos) e antes da taxa de entrega.</Notice>
         </section>
@@ -116,7 +116,7 @@ export function DeliverySettings() {
           <p className="text-muted text-[0.92rem] -mt-2">Indique intervalos com os 4 primeiros dígitos do código postal, separados por vírgulas (ex.: 2800-2899, 2900). Códigos fora de todas as zonas ativas não podem encomendar.</p>
           <div className="table-wrap">
             <table className="table">
-              <thead><tr><th>Ativa</th><th>Nome</th><th>Códigos postais</th><th>Taxa (€)</th><th><span className="sr-only">Remover</span></th></tr></thead>
+              <thead><tr><th>Ativa</th><th>Nome</th><th>Códigos postais</th><th>Taxa (€)</th><th>Mínimo (€)</th><th><span className="sr-only">Remover</span></th></tr></thead>
               <tbody>
                 {d.zones.map((z, i) => (
                   <tr key={z.id}>
@@ -124,6 +124,7 @@ export function DeliverySettings() {
                     <td><input className="input !min-h-10 min-w-48" aria-label="Nome da zona" value={z.name} onChange={(e) => setZone(i, { name: e.target.value })} /></td>
                     <td><input className="input num !min-h-10 min-w-40" aria-label={`Códigos postais da zona ${z.name}`} value={z.ranges} onChange={(e) => setZone(i, { ranges: e.target.value })} /></td>
                     <td><input type="number" step="0.5" min="0" className="input num !min-h-10 w-28" aria-label={`Taxa da zona ${z.name}`} value={z.fee} onChange={(e) => setZone(i, { fee: num(e.target.value) })} /></td>
+                    <td><input type="number" step="1" min="0" className="input num !min-h-10 w-24" aria-label={`Encomenda mínima da zona ${z.name}`} placeholder="Geral" value={z.minOrder ?? ''} onChange={(e) => setZone(i, { minOrder: e.target.value === '' ? undefined : num(e.target.value) })} /></td>
                     <td><button type="button" className="icon-btn text-danger" aria-label={`Remover zona ${z.name}`} onClick={() => set('zones', d.zones.filter((_, k) => k !== i))}><LuTrash2 aria-hidden /></button></td>
                   </tr>
                 ))}

@@ -24,14 +24,14 @@ export function HowItWorks() {
         <section className="panel p-6">
           <h2 className="text-xl font-bold mb-3">Entregas</h2>
           <ul className="grid gap-3 text-muted">
-            <li className="flex gap-3"><LuTruck className="mt-1 shrink-0 text-accent-600" aria-hidden />Entrega gratuita a partir de <strong className="text-ink num">{formatEuro(s.freeThreshold)}</strong>. Abaixo disso, aplica-se a taxa da sua zona.</li>
+            <li className="flex gap-3"><LuTruck className="mt-1 shrink-0 text-accent-600" aria-hidden />{s.freeThreshold > 0 ? <>Entrega gratuita a partir de <strong className="text-ink num">{formatEuro(s.freeThreshold)}</strong>. Abaixo disso, aplica-se a taxa da sua zona.</> : <>A taxa de entrega depende da distância a Amora e é calculada pelo seu código postal.</>}</li>
             <li className="flex gap-3"><LuClock className="mt-1 shrink-0 text-accent-600" aria-hidden />Pedimos {s.leadTimeDays} dias de antecedência. Encomendas feitas depois das {s.cutoffHour}h contam a partir do dia seguinte.</li>
             <li className="flex gap-3"><LuCalendarDays className="mt-1 shrink-0 text-accent-600" aria-hidden />Entregamos de {s.weekdays.map(weekdayName).join(', ')}.</li>
           </ul>
           <div className="table-wrap mt-4">
             <table className="table num">
-              <thead><tr><th>Zona</th><th>Códigos postais</th><th>Taxa</th></tr></thead>
-              <tbody>{s.zones.filter((z) => z.enabled).map((z) => <tr key={z.id}><td>{z.name}</td><td>{z.ranges}</td><td>{formatEuro(z.fee)}</td></tr>)}</tbody>
+              <thead><tr><th>Distância</th><th>Taxa de entrega</th><th>Encomenda mínima</th></tr></thead>
+              <tbody>{s.zones.filter((z) => z.enabled).map((z) => <tr key={z.id}><td>{z.name}</td><td>{formatEuro(z.fee)}</td><td>{formatEuro(z.minOrder ?? s.minOrderAmount)}</td></tr>)}</tbody>
             </table>
           </div>
         </section>

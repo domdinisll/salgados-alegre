@@ -50,7 +50,7 @@ export function Home() {
               <Link to="grosso" className="btn btn-accent btn-lg">Encomendar para revenda</Link>
             </div>
             <dl className="mt-10 grid grid-cols-3 gap-4 max-w-md">
-              <div><dt className="text-[0.8rem] text-muted">Entrega grátis</dt><dd className="num font-display text-xl font-bold text-brand-800">desde {formatEuro(settings.delivery.freeThreshold)}</dd></div>
+              <div><dt className="text-[0.8rem] text-muted">Entregas</dt><dd className="font-display text-xl font-bold text-brand-800">seg. a sex.</dd></div>
               <div><dt className="text-[0.8rem] text-muted">Antecedência</dt><dd className="font-display text-xl font-bold text-brand-800">{settings.delivery.leadTimeDays} dias</dd></div>
               <div><dt className="text-[0.8rem] text-muted">Variedades</dt><dd className="num font-display text-xl font-bold text-brand-800">{products.filter((p) => p.active).length}</dd></div>
             </dl>
@@ -150,7 +150,7 @@ export function Home() {
         </div>
         <HowSteps />
         <p className="mt-6 text-muted text-[0.95rem]">
-          Entrega gratuita em encomendas a partir de <strong className="num text-ink">{formatEuro(settings.delivery.freeThreshold)}</strong>. Abaixo desse valor aplica-se a taxa de entrega da sua zona.
+          Entregamos até 50 km de Amora, de segunda a sexta-feira. A taxa de entrega depende da distância e é calculada pelo código postal. <Link to="como-funciona" className="font-semibold text-brand-700 underline underline-offset-2">Ver zonas e taxas</Link>.
         </p>
       </section>
     </>

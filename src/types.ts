@@ -155,6 +155,8 @@ export interface DeliveryZone {
   /** Intervalos de códigos postais (4 primeiros dígitos), ex.: "2800-2899". */
   ranges: string;
   fee: number;
+  /** Encomenda mínima nesta zona (€). Vazio = usa o mínimo geral. */
+  minOrder?: number;
   enabled: boolean;
 }
 

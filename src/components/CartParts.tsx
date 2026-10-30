@@ -74,7 +74,7 @@ export function CartLine({ line, compact = false, onNavigate }: { line: LineResu
 
 export function FreeDeliveryProgress({ t }: { t: TotalsResult }) {
   const threshold = useSettings().delivery.freeThreshold;
-  if (t.lines.length === 0) return null;
+  if (t.lines.length === 0 || threshold <= 0) return null;
   const pct = Math.min(100, (t.discountedSubtotal / threshold) * 100);
   return (
     <div className="rounded-xl bg-brand-50 border border-brand-100 px-4 py-3">
