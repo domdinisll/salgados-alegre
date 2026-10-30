@@ -1,4 +1,5 @@
 import { useEffect, useId, useRef, type ReactNode } from 'react';
+import { createPortal } from 'react-dom';
 import { LuCircleAlert, LuCircleCheck, LuInfo, LuMinus, LuPlus, LuTriangleAlert, LuX, LuClock, LuSnowflake, LuFlame } from 'react-icons/lu';
 import type { Availability, OrderStatus, PaymentStatus, PrepOptionId } from '../types';
 import { ORDER_STATUS_LABELS, PAYMENT_STATUS_LABELS, PREP_OPTIONS } from '../config/defaults';
@@ -203,7 +204,8 @@ export function Modal({ open, onClose, title, children, footer, side = false, la
     };
   }, [open, onClose]);
   if (!open) return null;
-  return (
+  // Renderizado no <body> para não ficar preso dentro do cabeçalho (que tem efeito de desfoque).
+  return createPortal(
     <div className="fixed inset-0 z-[70]">
       <div className="absolute inset-0 bg-brand-900/45 anim-fade" onClick={onClose} aria-hidden />
       <div
@@ -225,7 +227,8 @@ export function Modal({ open, onClose, title, children, footer, side = false, la
         <div className={side ? 'flex-1 overflow-y-auto px-5 py-4' : 'px-5 pb-5'}>{children}</div>
         {footer && <div className={`px-5 py-4 ${side ? 'border-t border-line bg-paper' : 'pt-0'}`}>{footer}</div>}
       </div>
-    </div>
+    </div>,
+    document.body,
   );
 }
 
