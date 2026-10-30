@@ -4,6 +4,7 @@ import { StoreLayout, Toasts } from './components/Layout';
 import { Home } from './pages/Home';
 import { Catalog } from './pages/Catalog';
 import { ProductPage } from './pages/ProductPage';
+import { NutritionPage } from './pages/NutritionPage';
 import { CartPage } from './pages/CartPage';
 import { Checkout } from './pages/Checkout';
 import { Confirmation } from './pages/Confirmation';
@@ -24,6 +25,7 @@ const TITLES: [RegExp, string][] = [
   [/^$/, 'Salgados Alegre · Salgados por grosso'],
   [/^produtos$/, 'Produtos'],
   [/^produto-/, 'Produto'],
+  [/^nutricao-/, 'Informação nutricional'],
   [/^carrinho$/, 'Carrinho'],
   [/^grosso$/, 'Encomendas por grosso'],
   [/^como-funciona$/, 'Como funciona'],
@@ -46,6 +48,7 @@ function Storefront({ route }: { route: string }) {
   if (route === '') return <Home />;
   if (route === 'produtos') return <Catalog />;
   if ((v = param(route, 'produto-'))) return <ProductPage slug={v} />;
+  if ((v = param(route, 'nutricao-'))) return <NutritionPage slug={v} />;
   if (route === 'carrinho') return <CartPage />;
   if (route === 'grosso') return <Wholesale />;
   if (route === 'como-funciona') return <HowItWorks />;

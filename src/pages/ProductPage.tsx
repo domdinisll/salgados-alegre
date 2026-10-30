@@ -8,6 +8,7 @@ import { formatEuro, round2 } from '../lib/format';
 import { Link } from '../router';
 import { ProductArt } from '../components/ProductArt';
 import { ProductCard, canBuy } from '../components/ProductCard';
+import { AllergenSummary } from './NutritionPage';
 import { AvailabilityBadge, EmptyState, Notice, PrepIcon, QtyStepper, SampleTag, prepLabel } from '../components/ui';
 
 export function ProductPage({ slug }: { slug: string }) {
@@ -182,7 +183,12 @@ export function ProductPage({ slug }: { slug: string }) {
 
           <section className="mt-8" aria-labelledby="ingredientes">
             <h2 id="ingredientes" className="text-xl font-bold mb-3">Ingredientes e alergénios</h2>
-            {product.ingredients || product.allergens ? (
+            {product.nutrition || product.allergenIds?.length ? (
+              <div className="grid gap-4">
+                {product.ingredients && <p className="text-muted text-[0.95rem]"><span className="font-semibold text-ink">Ingredientes: </span>{product.ingredients}</p>}
+                <AllergenSummary product={product} />
+              </div>
+            ) : product.ingredients || product.allergens ? (
               <dl className="grid gap-2 text-[0.95rem]">
                 <div><dt className="font-semibold">Ingredientes</dt><dd className="text-muted">{product.ingredients || 'A confirmar pelo negócio.'}</dd></div>
                 <div><dt className="font-semibold">Alergénios</dt><dd className="text-muted">{product.allergens || 'A confirmar pelo negócio.'}</dd></div>

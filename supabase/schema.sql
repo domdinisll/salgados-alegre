@@ -124,6 +124,8 @@ create policy "profiles: próprio ou admin edita" on public.profiles for update 
 -- Encomendas: criadas APENAS pela função place_order (não há política de insert).
 drop policy if exists "orders: próprio ou admin lê" on public.orders;
 create policy "orders: próprio ou admin lê" on public.orders for select using (customer_id = auth.uid() or public.is_admin());
+drop policy if exists "orders: admin apaga canceladas" on public.orders;
+create policy "orders: admin apaga canceladas" on public.orders for delete using (public.is_admin() and status = 'cancelada');
 drop policy if exists "orders: admin edita" on public.orders;
 create policy "orders: admin edita" on public.orders for update using (public.is_admin()) with check (public.is_admin());
 

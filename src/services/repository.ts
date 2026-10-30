@@ -89,6 +89,12 @@ export const api = {
     const rows = await rest<unknown[]>(`/orders?id=eq.${enc(o.id)}`, { method: 'PATCH', body: { status: o.status, payment_status: o.paymentStatus, data: o }, prefer: 'return=representation' });
     if (!rows?.length) throw new Error('Sem permissão para alterar esta encomenda.');
   },
+  /** Só funciona para encomendas canceladas (regra na base de dados). */
+  async deleteOrders(ids: string[]): Promise<number> {
+    if (!ids.length) return 0;
+    const rows = await rest<unknown[]>(`/orders?status=eq.cancelada&id=in.(${ids.map(enc).join(',')})`, { method: 'DELETE', prefer: 'return=representation' });
+    return rows?.length ?? 0;
+  },
   async placeOrder(input: OrderInput): Promise<Order> {
     return rpc<Order>('place_order', {
       input: {

@@ -1,12 +1,12 @@
 import { useMemo, useState } from 'react';
-import { LuChevronLeft, LuSearch, LuClipboardList } from 'react-icons/lu';
+import { LuChevronLeft, LuSearch, LuClipboardList, LuTrash2 } from 'react-icons/lu';
 import type { OrderStatus, PaymentStatus } from '../types';
 import { ORDER_STATUS_LABELS, PAYMENT_STATUS_LABELS } from '../config/defaults';
 import { errorText, toast, useOrders } from '../state';
-import { addOrderNote, updateOrderStatus, updatePaymentStatus } from '../services/orders';
+import { addOrderNote, deleteCancelledOrders, updateOrderStatus, updatePaymentStatus } from '../services/orders';
 import { paymentLabel } from '../services/payments';
 import { formatDate, formatDateTime, formatEuro, normalize } from '../lib/format';
-import { Link } from '../router';
+import { Link, navigate } from '../router';
 import { EmptyState, Notice, PaymentBadge, StatusBadge, ConfirmDialog } from '../components/ui';
 import { OrderFacts, OrderLinesTable, OrderTotals } from '../components/OrderView';
 import { AdminHeader } from './AdminApp';
@@ -37,10 +37,21 @@ export function OrdersAdmin() {
 
   const counts = Object.fromEntries(STATUSES.map((s) => [s, orders.filter((o) => o.status === s).length]));
   const clear = () => { setQ(''); setStatus('todos'); setType('todos'); setFrom(''); setTo(''); };
+  const cancelled = orders.filter((o) => o.status === 'cancelada');
+  const [confirmPurge, setConfirmPurge] = useState(false);
+  const purge = () => {
+    deleteCancelledOrders(cancelled.map((o) => o.id))
+      .then((n) => toast(`${n} ${n === 1 ? 'encomenda cancelada apagada' : 'encomendas canceladas apagadas'}.`))
+      .catch((e) => toast(errorText(e), 'error'));
+  };
 
   return (
     <>
-      <AdminHeader title="Encomendas">{orders.length} encomendas no total</AdminHeader>
+      <AdminHeader title="Encomendas" actions={cancelled.length > 0 ? (
+        <button type="button" className="btn btn-outline text-danger" onClick={() => setConfirmPurge(true)}><LuTrash2 aria-hidden />Apagar canceladas ({cancelled.length})</button>
+      ) : undefined}>{orders.length} encomendas no total</AdminHeader>
+      <ConfirmDialog open={confirmPurge} onClose={() => setConfirmPurge(false)} title={`Apagar ${cancelled.length} ${cancelled.length === 1 ? 'encomenda cancelada' : 'encomendas canceladas'}?`} confirmLabel="Apagar definitivamente"
+        message={<>As encomendas canceladas são apagadas de forma permanente: {cancelled.map((o) => o.number).join(', ')}. Encomendas noutros estados não são afetadas.</>} onConfirm={purge} />
       <div className="flex gap-2 overflow-x-auto pb-2 mb-4" role="group" aria-label="Filtrar por estado">
         {(['todos', ...STATUSES] as const).map((s) => (
           <button key={s} type="button" aria-pressed={status === s} onClick={() => setStatus(s)}
@@ -109,6 +120,7 @@ export function OrderAdminDetail({ id }: { id: string }) {
   const [status, setStatus] = useState<OrderStatus | ''>('');
   const [note, setNote] = useState('');
   const [confirmCancel, setConfirmCancel] = useState(false);
+  const [confirmDelete, setConfirmDelete] = useState(false);
   if (!order) return <EmptyState icon={<LuClipboardList />} title="Encomenda não encontrada" action={<Link to="admin-encomendas" className="btn btn-primary">Ver encomendas</Link>} />;
   const selected = status || order.status;
   const apply = () => {
@@ -161,6 +173,13 @@ export function OrderAdminDetail({ id }: { id: string }) {
               ))}
             </ol>
           </section>
+          {order.status === 'cancelada' && (
+            <section className="panel p-5 grid gap-3 border-danger/30">
+              <h2 className="font-bold text-lg">Apagar encomenda</h2>
+              <p className="text-[0.9rem] text-muted">Encomendas canceladas podem ser apagadas para manter a lista organizada.</p>
+              <button type="button" className="btn btn-outline text-danger" onClick={() => setConfirmDelete(true)}><LuTrash2 aria-hidden />Apagar encomenda</button>
+            </section>
+          )}
           <section className="panel p-5 grid gap-3">
             <h2 className="font-bold text-lg">Notas internas</h2>
             <p className="text-[0.82rem] text-muted -mt-2">Visíveis apenas para a equipa.</p>
@@ -177,6 +196,10 @@ export function OrderAdminDetail({ id }: { id: string }) {
           </section>
         </div>
       </div>
+      <ConfirmDialog open={confirmDelete} onClose={() => setConfirmDelete(false)} title={`Apagar a encomenda ${order.number}?`} confirmLabel="Apagar definitivamente"
+        message="A encomenda é apagada de forma permanente e deixa de aparecer no painel e na conta do cliente." onConfirm={() => {
+          deleteCancelledOrders([order.id]).then(() => { toast(`Encomenda ${order.number} apagada.`); navigate('admin-encomendas'); }).catch((e) => toast(errorText(e), 'error'));
+        }} />
       <ConfirmDialog open={confirmCancel} onClose={() => setConfirmCancel(false)} title="Cancelar esta encomenda?" confirmLabel="Cancelar encomenda"
         message={`A encomenda ${order.number} passa para o estado «Cancelada». O cliente deve ser informado. Num sistema real, um eventual reembolso seria tratado no fornecedor de pagamentos.`} onConfirm={apply} />
     </>

@@ -17,6 +17,32 @@ export interface ProductPrepConfig {
   unitPrice: number;
 }
 
+/** Os 14 alergénios de declaração obrigatória (Regulamento (UE) 1169/2011, anexo II). */
+export type AllergenId =
+  | 'gluten' | 'crustaceos' | 'ovos' | 'peixe' | 'amendoins' | 'soja' | 'leite'
+  | 'frutos_casca_rija' | 'aipo' | 'mostarda' | 'sesamo' | 'sulfitos' | 'tremoco' | 'moluscos';
+
+/** Declaração nutricional por porção (valores por 100 g são calculados). */
+export interface Nutrition {
+  portionGrams: number;
+  energyKcal: number;
+  fat: number;
+  saturates: number;
+  carbs: number;
+  sugars?: number;
+  fibre?: number;
+  protein: number;
+  /** Sódio em mg (o sal é calculado: sódio × 2,5). */
+  sodiumMg: number;
+}
+
+export interface IngredientLine {
+  name: string;
+  qty: number;
+  unit: 'g' | 'ml';
+  allergen?: AllergenId;
+}
+
 export interface PriceTier {
   /** Número mínimo de unidades (salgados) na linha para aplicar o desconto. */
   minUnits: number;
@@ -43,6 +69,9 @@ export interface Product {
   /** Preparações configuradas (as ausentes contam como desativadas). */
   prep: Partial<Record<PrepOptionId, ProductPrepConfig>>;
   tiers: PriceTier[];
+  nutrition?: Nutrition;
+  ingredientsList?: IngredientLine[];
+  allergenIds?: AllergenId[];
   availability: Availability;
   /** Stock em unidades. null = não controlado. */
   stock: number | null;

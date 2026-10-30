@@ -48,11 +48,33 @@ const medio = (b: Base) => make({ ...b, category: MEDIO }, fritoCongelado(1.0, 0
 // Miniaturas: 100 unidades = 25,00 € frito / 20,00 € congelado
 const mini = (b: Base) => make({ ...b, category: MINI }, fritoCongelado(0.25, 0.2), [100], 100);
 
+// Informação nutricional e receita indicadas pelo negócio (30/10/2026), para 1 coxinha grande.
+export const COXINHA_INFO: Partial<Product> = {
+  nutrition: { portionGrams: 220, energyKcal: 550, fat: 21, saturates: 5, carbs: 66, fibre: 3, protein: 24, sodiumMg: 1100 },
+  ingredientsList: [
+    { name: 'Peito de frango cozido e desfiado', qty: 65, unit: 'g' },
+    { name: 'Farinha de trigo', qty: 55, unit: 'g', allergen: 'gluten' },
+    { name: 'Caldo de frango', qty: 35, unit: 'ml' },
+    { name: 'Batata cozida', qty: 20, unit: 'g' },
+    { name: 'Pão ralado (trigo)', qty: 12, unit: 'g', allergen: 'gluten' },
+    { name: 'Óleo vegetal (absorvido na fritura)', qty: 10, unit: 'g' },
+    { name: 'Cebola', qty: 8, unit: 'g' },
+    { name: 'Ovo', qty: 8, unit: 'g', allergen: 'ovos' },
+    { name: 'Margarina', qty: 5, unit: 'g' },
+    { name: 'Alho', qty: 2, unit: 'g' },
+    { name: 'Salsa e cebolinho', qty: 2, unit: 'g' },
+    { name: 'Sal', qty: 1, unit: 'g' },
+  ],
+  allergenIds: ['gluten', 'ovos'],
+  ingredients: 'Peito de frango, farinha de TRIGO, caldo de frango, batata, pão ralado (TRIGO), óleo vegetal, cebola, OVO, margarina, alho, salsa, cebolinho, sal.',
+  allergens: 'Contém glúten (trigo) e ovo.',
+};
+
 export const SAMPLE_PRODUCTS: Product[] = [
   // ----- Salgados grandes -----
   grande({ id: 'g-coxinha-queijo', slug: 'coxinha-com-queijo', name: 'Coxinha com Queijo', category: GRANDE, art: 'coxinha', featured: true,
     shortDescription: 'Coxinha grande de frango com queijo.' }),
-  grande({ id: 'g-coxinha', slug: 'coxinha-sem-queijo', name: 'Coxinha sem Queijo', category: GRANDE, art: 'coxinha',
+  grande({ id: 'g-coxinha', slug: 'coxinha-sem-queijo', name: 'Coxinha sem Queijo', category: GRANDE, art: 'coxinha', ...COXINHA_INFO,
     shortDescription: 'Coxinha grande de frango, sem queijo.' }),
   grande({ id: 'g-rissol-frango-milho-queijo', slug: 'rissol-de-frango-milho-e-queijo', name: 'Rissol de Frango, Milho e Queijo', category: GRANDE, art: 'rissol', featured: true,
     shortDescription: 'Rissol grande recheado com frango, milho e queijo.' }),

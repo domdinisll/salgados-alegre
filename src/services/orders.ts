@@ -51,6 +51,16 @@ export function updatePaymentStatus(id: string, paymentStatus: PaymentStatus) {
   return patch(id, (o) => ({ ...o, paymentStatus }));
 }
 
+/** Apaga encomendas canceladas. Encomendas noutro estado nunca são apagadas. */
+export async function deleteCancelledOrders(ids: string[]): Promise<number> {
+  const cancelled = ordersStore.get().filter((o) => ids.includes(o.id) && o.status === 'cancelada').map((o) => o.id);
+  if (!cancelled.length) throw new Error('Só é possível apagar encomendas canceladas.');
+  const n = await api.deleteOrders(cancelled);
+  if (n === 0) throw new Error('Não foi possível apagar. Confirme que a atualização 5 da base de dados foi aplicada.');
+  ordersStore.set((os) => os.filter((o) => !cancelled.includes(o.id)));
+  return n;
+}
+
 export function addOrderNote(id: string, text: string) {
   const at = new Date().toISOString();
   return patch(id, (o) => ({ ...o, notes: [...o.notes, { text, at }] }));
