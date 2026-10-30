@@ -406,7 +406,15 @@ begin
   exception when others then key := null;
   end;
   if coalesce(key, '') = '' then return null; end if;
-  select array_agg(email) into recipients from public.profiles where is_admin and coalesce(email, '') <> '';
+  -- Destinatário dos alertas: o email guardado no cofre como 'order_alert_email' (por exemplo, o email
+  -- da conta Resend, obrigatório no plano gratuito sem domínio próprio). Se não existir, os administradores.
+  begin
+    select array[trim(decrypted_secret)] into recipients from vault.decrypted_secrets where name = 'order_alert_email' and trim(decrypted_secret) <> '' limit 1;
+  exception when others then recipients := null;
+  end;
+  if recipients is null then
+    select array_agg(email) into recipients from public.profiles where is_admin and coalesce(email, '') <> '';
+  end if;
   if recipients is null then return null; end if;
 
   td := 'padding:8px 10px;border-bottom:1px solid #eee;vertical-align:top';
