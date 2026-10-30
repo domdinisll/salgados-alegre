@@ -35,29 +35,32 @@ test('preços do catálogo real', () => {
 });
 
 test('abaixo do limiar: cobra portes da zona e indica quanto falta', () => {
-  // 20 coxinhas médias fritas × 1,00 € = 20,00 €
-  const t = computeTotals([item('m-coxinha', 10, 2, 'frito')], P, S, { wholesale: false, postalCode: '2845-123', today: NOW });
-  assert.equal(t.merchandiseSubtotal, 20);
-  assert.equal(t.deliveryFee, 4.5);
-  assert.equal(t.remainingForFreeDelivery, 10);
-  assert.equal(t.total, 24.5);
+  // 25 coxinhas médias fritas × 1,00 € = 25,00 €
+  const t = computeTotals([item('m-coxinha', 25, 1, 'frito')], P, S, { wholesale: false, postalCode: '2845-123', today: NOW });
+  assert.equal(t.merchandiseSubtotal, 25);
+  assert.equal(t.deliveryFee, 5);
+  assert.equal(t.remainingForFreeDelivery, 5);
+  assert.equal(t.total, 30);
   assert.equal(t.canCheckout, true);
 });
 
 test('igual ou acima do limiar: entrega gratuita', () => {
-  // 100 mini coxinhas fritas (25 €) + 10 coxinhas grandes congeladas (13 €) = 38 €
-  const t = computeTotals([item('n-coxinha-frango', 100, 1, 'frito'), item('g-coxinha-queijo', 10, 1, 'congelado')], P, S, { wholesale: false, postalCode: '2845-123', today: NOW });
-  assert.equal(t.discountedSubtotal, 38);
+  // 50 coxinhas grandes congeladas (65 €) + 100 mini coxinhas fritas (25 €) = 90 €
+  const t = computeTotals([item('g-coxinha-queijo', 50, 1, 'congelado'), item('n-coxinha-frango', 100, 1, 'frito')], P, S, { wholesale: false, postalCode: '2845-123', today: NOW });
+  assert.equal(t.discountedSubtotal, 90);
   assert.equal(t.deliveryFee, 0);
   assert.equal(t.freeDelivery, true);
-  assert.equal(t.total, 38);
+  assert.equal(t.canCheckout, true);
 });
 
 test('limiar calculado depois dos descontos', () => {
-  // 30 coxinhas médias fritas = 30 € → grátis; com código de 10% desce para 27 € e paga portes
-  const t = computeTotals([item('m-coxinha', 10, 3, 'frito')], P, S, { wholesale: false, today: NOW });
+  const s2: Settings = structuredClone(S);
+  s2.pricing.codes = [{ id: 'x', code: 'TESTE10', type: 'percent', value: 10, minSubtotal: 0, active: true, validUntil: '', description: '' }];
+  // 100 mini congeladas (20 €) + 10 empadas (10 €) = 30 € → grátis; com 10% desce para 27 € e paga portes
+  const items = [item('n-salsicha', 100, 1, 'congelado'), item('a-empada', 10, 1, 'pronto')];
+  const t = computeTotals(items, P, s2, { wholesale: false, today: NOW });
   assert.equal(t.freeDelivery, true);
-  const t2 = computeTotals([item('m-coxinha', 10, 3, 'frito')], P, S, { wholesale: false, discountCode: 'bemvindo10', today: NOW });
+  const t2 = computeTotals(items, P, s2, { wholesale: false, discountCode: 'teste10', today: NOW });
   assert.equal(t2.codeDiscount, 3);
   assert.equal(t2.freeDelivery, false);
   assert.equal(t2.deliveryFee, S.delivery.standardFee);
@@ -77,28 +80,38 @@ test('preço revenda só se aplica quando configurado e a contas aprovadas', () 
 test('validações: preparação indisponível, pack inválido, valor mínimo, esgotado', () => {
   const t = computeTotals([item('a-empada', 50, 1, 'frito')], P, S, { wholesale: false, today: NOW });
   assert.ok(t.errors.some((e) => e.includes('preparação')));
-  const mini = computeTotals([item('n-salsicha', 10, 1, 'frito')], P, S, { wholesale: false, today: NOW });
-  assert.equal(mini.canCheckout, false);
-  const small = computeTotals([item('m-coxinha', 10, 1, 'frito')], P, S, { wholesale: false, today: NOW });
+  assert.equal(computeTotals([item('n-salsicha', 10, 1, 'frito')], P, S, { wholesale: false, today: NOW }).canCheckout, false);
+  assert.equal(computeTotals([item('g-coxinha', 25, 1, 'frito')], P, S, { wholesale: false, today: NOW }).canCheckout, false); // grandes só em packs de 50
+  const small = computeTotals([item('a-pao-queijo', 10, 1, 'pronto')], P, S, { wholesale: false, today: NOW });
   assert.ok(small.errors.some((e) => e.includes('valor mínimo')));
   const ps = structuredClone(P);
   ps.find((p) => p.id === 'm-coxinha')!.availability = 'esgotado';
-  const out = computeTotals([item('m-coxinha', 100, 1, 'frito')], ps, S, { wholesale: false, today: NOW });
-  assert.equal(out.canCheckout, false);
+  assert.equal(computeTotals([item('m-coxinha', 25, 2, 'frito')], ps, S, { wholesale: false, today: NOW }).canCheckout, false);
 });
 
-test('zonas por código postal', () => {
-  assert.equal(resolveZone('2845-123', S.delivery.zones).ok, true);
-  assert.equal(resolveZone('4000-001', S.delivery.zones).ok, false);
+test('pão de queijo e empada: prontos ou congelados para o forno, ao mesmo preço', () => {
+  const a = computeTotals([item('a-empada', 25, 1, 'pronto')], P, S, { wholesale: false, today: NOW });
+  const b = computeTotals([item('a-empada', 25, 1, 'congelado_forno')], P, S, { wholesale: false, today: NOW });
+  assert.equal(a.merchandiseSubtotal, 25);
+  assert.equal(b.merchandiseSubtotal, 25);
+  assert.equal(b.canCheckout, true);
+});
+
+test('zona de 50 km por código postal', () => {
+  for (const ok of ['2845-340', '1000-001', '2710-001', '2750-001', '2900-001', '2135-001', '2640-001']) assert.equal(resolveZone(ok, S.delivery.zones).ok, true, ok);
+  for (const no of ['4000-001', '7000-001', '2560-001', '3000-001']) assert.equal(resolveZone(no, S.delivery.zones).ok, false, no);
   assert.deepEqual(resolveZone('28451', S.delivery.zones), { ok: false, reason: 'formato' });
 });
 
-test('datas de entrega: antecedência, dias permitidos e feriados', () => {
-  assert.equal(earliestDeliveryDate(NOW, S.delivery), '2026-11-03');
-  assert.equal(checkDeliveryDate('2026-11-02', NOW, S.delivery).ok, false);
-  assert.equal(checkDeliveryDate('2026-11-03', NOW, S.delivery).ok, true);
-  assert.equal(checkDeliveryDate('2026-12-25', NOW, S.delivery).ok, false);
-  assert.equal(earliestDeliveryDate(new Date(2026, 10, 2, 17, 0), S.delivery), '2026-11-05');
+test('datas de entrega: segunda a sexta, 2 dias de antecedência, hora-limite 15h', () => {
+  // sexta 30/10 11:00 + 2 dias = domingo → segunda 02/11
+  assert.equal(earliestDeliveryDate(NOW, S.delivery), '2026-11-02');
+  assert.equal(checkDeliveryDate('2026-11-01', NOW, S.delivery).ok, false); // domingo
+  assert.equal(checkDeliveryDate('2026-11-02', NOW, S.delivery).ok, true);
+  assert.equal(checkDeliveryDate('2026-11-07', NOW, S.delivery).ok, false); // sábado
+  assert.equal(checkDeliveryDate('2026-12-25', NOW, S.delivery).ok, false); // feriado
+  assert.equal(earliestDeliveryDate(new Date(2026, 10, 2, 14, 0), S.delivery), '2026-11-04');
+  assert.equal(earliestDeliveryDate(new Date(2026, 10, 2, 15, 30), S.delivery), '2026-11-05');
 });
 
 test('a encomenda é sempre recalculada e nunca marcada como paga', () => {

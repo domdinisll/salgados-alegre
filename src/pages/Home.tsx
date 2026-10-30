@@ -37,7 +37,7 @@ export function Home() {
         <div className="wrap grid lg:grid-cols-[1.05fr_1fr] gap-10 lg:gap-14 items-center py-12 md:py-16 lg:py-20">
           <div className="min-w-0">
             <p className="inline-flex items-center gap-2 rounded-full bg-paper border border-line px-3 py-1.5 text-[0.85rem] font-semibold text-brand-700">
-              <LuPackage aria-hidden /> Packs de 10 a 100 unidades · fritos ou congelados
+              <LuPackage aria-hidden /> Fritos, congelados ou prontos a servir
             </p>
             <h1 className="mt-5 text-[2.4rem] sm:text-5xl lg:text-[3.6rem] font-extrabold leading-[1.02] text-brand-900" data-page-title tabIndex={-1}>
               Os seus salgados favoritos, <span className="relative whitespace-nowrap text-brand-700">à distância<svg aria-hidden viewBox="0 0 200 12" className="absolute left-0 -bottom-1.5 w-full h-3" preserveAspectRatio="none"><path d="M2 9 Q50 2 100 6 T198 4" stroke="#e99a2c" strokeWidth="5" fill="none" strokeLinecap="round" /></svg></span> de um clique.

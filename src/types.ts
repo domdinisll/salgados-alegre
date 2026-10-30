@@ -1,7 +1,7 @@
 // Modelo de dados partilhado. Pensado para mapear 1:1 para tabelas numa base de dados real
 // (products, customers, orders, order_items, settings, discount_codes, delivery_zones).
 
-export type PrepOptionId = 'frito' | 'congelado' | 'pronto';
+export type PrepOptionId = 'frito' | 'congelado' | 'congelado_forno' | 'pronto';
 
 export interface PrepOptionDef {
   id: PrepOptionId;
@@ -40,7 +40,8 @@ export interface Product {
   packSizes: number[];
   /** Quantidade mínima de unidades por linha de encomenda. */
   minOrderUnits: number;
-  prep: Record<PrepOptionId, ProductPrepConfig>;
+  /** Preparações configuradas (as ausentes contam como desativadas). */
+  prep: Partial<Record<PrepOptionId, ProductPrepConfig>>;
   tiers: PriceTier[];
   availability: Availability;
   /** Stock em unidades. null = não controlado. */

@@ -96,7 +96,7 @@ export function ProductPage({ slug }: { slug: string }) {
                       <input type="radio" name="prep" value={o.id} checked={prep === o.id} disabled={!enabled} onChange={() => setPrep(o.id)} className="mt-1 w-5 h-5 accent-brand-700 shrink-0" />
                       <span className="min-w-0">
                         <span className="flex items-center gap-1.5 font-bold">
-                          <PrepIcon prep={o.id} className={o.id === 'frito' ? 'text-accent-600' : o.id === 'congelado' ? 'text-info' : 'text-brand-600'} />
+                          <PrepIcon prep={o.id} className={o.id === 'frito' ? 'text-accent-600' : o.id.startsWith('congelado') ? 'text-info' : 'text-brand-600'} />
                           {o.label}
                         </span>
                         <span className="block text-[0.88rem] text-muted mt-0.5">{o.description}</span>

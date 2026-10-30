@@ -19,10 +19,16 @@ export const PREP_OPTIONS: PrepOptionDef[] = [
     description: 'Entregue congelado. Precisa de ser frito antes de consumir.',
   },
   {
+    id: 'congelado_forno',
+    label: 'Congelado para ir ao forno',
+    short: 'Congelado',
+    description: 'Entregue congelado. Vai ao forno antes de consumir.',
+  },
+  {
     id: 'pronto',
     label: 'Pronto a servir',
     short: 'Pronto',
-    description: 'Preço único. Entregue pronto a servir.',
+    description: 'Entregue pronto a comer ou servir.',
   },
 ];
 
@@ -63,17 +69,18 @@ export const DEFAULT_SETTINGS: Settings = {
     freeThreshold: 30,
     minOrderAmount: 15,
     leadTimeDays: 2,
-    cutoffHour: 16,
-    weekdays: [2, 3, 4, 5, 6], // terça a sábado
+    cutoffHour: 15,
+    weekdays: [1, 2, 3, 4, 5], // segunda a sexta
     blackoutDates: ['2026-12-25', '2027-01-01'],
-    timeSlots: ['09:00 – 12:00', '12:00 – 15:00', '15:00 – 19:00'],
+    timeSlots: ['09:00 – 12:00', '12:00 – 15:00'],
     maxDaysAhead: 60,
     zones: [
-      { id: 'z1', name: 'Margem Sul (exemplo)', ranges: '2800-2899', fee: 4.5, enabled: true },
-      { id: 'z2', name: 'Lisboa (exemplo)', ranges: '1000-1999', fee: 6, enabled: true },
-      { id: 'z3', name: 'Setúbal e Palmela (exemplo)', ranges: '2900-2959', fee: 6.5, enabled: true },
+      // Aproximação por código postal de um raio de 50 km a partir de 2845-340 (Amora):
+      // Lisboa, Loures/Odivelas, Amadora, Sintra, Cascais, Oeiras, Mafra, Vila Franca de Xira,
+      // Arruda dos Vinhos, Margem Sul, Setúbal, Palmela, Sesimbra, Benavente e Samora Correia.
+      { id: 'z1', name: 'Até 50 km de Amora', ranges: '1000-1999, 2130-2139, 2600-2999', fee: 5, enabled: true },
     ],
-    restrictionsNote: 'Entregas apenas em Portugal Continental, nas zonas configuradas.',
+    restrictionsNote: 'Entregamos num raio de cerca de 50 km de Amora (Seixal), de segunda a sexta-feira.',
   },
   pricing: {
     wholesaleDiscountPct: 0, // sem desconto de revenda definido pelo negócio

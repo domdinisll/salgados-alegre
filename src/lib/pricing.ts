@@ -64,7 +64,7 @@ export function fromPrice(product: Product): number {
 }
 
 export function enabledPreps(product: Product): PrepOptionId[] {
-  return (Object.keys(product.prep) as PrepOptionId[]).filter((k) => product.prep[k].enabled);
+  return (Object.keys(product.prep) as PrepOptionId[]).filter((k) => product.prep[k]?.enabled);
 }
 
 export function lineDiscount(product: Product, units: number, ctx: PricingContext, settings: Settings): { pct: number; label: string } {

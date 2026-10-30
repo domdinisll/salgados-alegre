@@ -50,7 +50,7 @@ export function Catalog() {
       </PageHeader>
 
       <Notice tone="info" className="mb-6">
-        Os salgados grandes e médios vendem-se em packs de 10 a 100 unidades. Os miniatura vendem-se em packs de 100.
+        Salgados grandes em packs de 50, médios em packs de 25 e miniatura em packs de 100 unidades.
       </Notice>
 
       <div className="panel p-4 md:p-5 mb-8 grid gap-4">

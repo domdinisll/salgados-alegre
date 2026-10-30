@@ -52,7 +52,7 @@ export function ProductsAdmin() {
                   </td>
                   <td className="whitespace-nowrap">
                     {PREP_OPTIONS.filter((o) => p.prep[o.id]?.enabled).map((o) => (
-                      <span key={o.id} className="block text-[0.88rem]"><span className="text-muted">{o.short}:</span> {formatEuro(p.prep[o.id].unitPrice)}</span>
+                      <span key={o.id} className="block text-[0.88rem]"><span className="text-muted">{o.short}:</span> {formatEuro(p.prep[o.id]?.unitPrice ?? 0)}</span>
                     ))}
                   </td>
                   <td className="whitespace-nowrap">{p.packSizes.join(', ')}</td>
@@ -114,7 +114,7 @@ export function ProductEditor({ id }: { id: string }) {
     if (!sizes.length) er.packs = 'Indique pelo menos um tamanho de pack (números separados por vírgulas).';
     const active = PREP_OPTIONS.filter((o) => p.prep[o.id]?.enabled);
     if (!active.length) er.prep = 'Ative pelo menos uma preparação.';
-    else if (active.some((o) => !(p.prep[o.id].unitPrice > 0))) er.prep = 'Indique um preço maior que zero para cada preparação ativa.';
+    else if (active.some((o) => !((p.prep[o.id]?.unitPrice ?? 0) > 0))) er.prep = 'Indique um preço maior que zero para cada preparação ativa.';
     if (stock !== '' && !(parseInt(stock, 10) >= 0)) er.stock = 'O stock tem de ser um número inteiro (ou vazio para não controlar).';
     setErrors(er);
     if (Object.keys(er).length) { toast('Corrija os campos assinalados.', 'error'); return; }
@@ -169,7 +169,7 @@ export function ProductEditor({ id }: { id: string }) {
 
           <section className="panel p-5 grid gap-5">
             <h2 className="font-bold text-lg">Preparação e preços</h2>
-            <div className="grid sm:grid-cols-3 gap-4">
+            <div className="grid sm:grid-cols-2 gap-4">
               {PREP_OPTIONS.map((o) => o.id).map((k) => (
                 <div key={k} className={`rounded-xl border-2 p-4 ${p.prep[k]?.enabled ? 'border-brand-200 bg-brand-50/50' : 'border-line'}`}>
                   <label className="flex items-center gap-2 font-semibold">

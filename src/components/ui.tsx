@@ -75,13 +75,14 @@ export function prepLabel(prep: PrepOptionId, short = false): string {
 
 export function PrepIcon({ prep, className = '' }: { prep: PrepOptionId; className?: string }) {
   if (prep === 'frito') return <LuFlame aria-hidden className={className} />;
-  if (prep === 'congelado') return <LuSnowflake aria-hidden className={className} />;
+  if (prep === 'congelado' || prep === 'congelado_forno') return <LuSnowflake aria-hidden className={className} />;
   return <LuCircleCheck aria-hidden className={className} />;
 }
 
 const PREP_BADGE: Record<PrepOptionId, string> = {
   frito: 'bg-accent-50 text-accent-800 ring-1 ring-accent-100',
   congelado: 'bg-info-bg text-info',
+  congelado_forno: 'bg-info-bg text-info',
   pronto: 'bg-brand-50 text-brand-700 ring-1 ring-brand-100',
 };
 

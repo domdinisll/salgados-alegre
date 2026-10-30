@@ -1,7 +1,8 @@
 import type { Product } from '../types';
 
 // Catálogo e preços indicados pelo negócio (30/10/2026).
-// A confirmar: tamanhos de pack dos salgados grandes e médios, descrições, ingredientes e alergénios.
+// Grandes em packs de 50, médios em packs de 25, miniatura em packs de 100.
+// A confirmar: descrições, ingredientes e alergénios.
 
 type Base = Pick<Product, 'id' | 'slug' | 'name' | 'category' | 'shortDescription' | 'art'> & Partial<Product>;
 
@@ -33,18 +34,17 @@ function make(b: Base, prep: Product['prep'], packSizes: number[], minOrderUnits
 const fritoCongelado = (frito: number, congelado: number): Product['prep'] => ({
   frito: { enabled: true, unitPrice: frito },
   congelado: { enabled: true, unitPrice: congelado },
-  pronto: { enabled: false, unitPrice: 0 },
 });
-const soPronto = (preco: number): Product['prep'] => ({
-  frito: { enabled: false, unitPrice: 0 },
-  congelado: { enabled: false, unitPrice: 0 },
+// Pão de queijo e empada: prontos a servir ou congelados para ir ao forno, ao mesmo preço.
+const prontoOuForno = (preco: number): Product['prep'] => ({
   pronto: { enabled: true, unitPrice: preco },
+  congelado_forno: { enabled: true, unitPrice: preco },
 });
 
 // Grandes: 1,40 € frito / 1,30 € congelado (por unidade)
-const grande = (b: Base) => make({ ...b, category: GRANDE }, fritoCongelado(1.4, 1.3), [10, 25, 50, 100], 10);
+const grande = (b: Base) => make({ ...b, category: GRANDE }, fritoCongelado(1.4, 1.3), [50], 50);
 // Médios: 1,00 € frito / 0,90 € congelado (por unidade)
-const medio = (b: Base) => make({ ...b, category: MEDIO }, fritoCongelado(1.0, 0.9), [10, 25, 50, 100], 10);
+const medio = (b: Base) => make({ ...b, category: MEDIO }, fritoCongelado(1.0, 0.9), [25], 25);
 // Miniaturas: 100 unidades = 25,00 € frito / 20,00 € congelado
 const mini = (b: Base) => make({ ...b, category: MINI }, fritoCongelado(0.25, 0.2), [100], 100);
 
@@ -64,8 +64,8 @@ export const SAMPLE_PRODUCTS: Product[] = [
     shortDescription: 'Pastel grande recheado com carne e queijo.' }),
 
   // ----- Salgados médios -----
-  medio({ id: 'm-camarao', slug: 'camarao-medio', name: 'Camarão', category: MEDIO, art: 'rissol', featured: true,
-    shortDescription: 'Salgado médio de camarão.' }),
+  medio({ id: 'm-camarao', slug: 'rissol-de-camarao-medio', name: 'Rissol de Camarão', category: MEDIO, art: 'rissol', featured: true,
+    shortDescription: 'Rissol de camarão de tamanho médio.' }),
   medio({ id: 'm-croquete-carne', slug: 'croquete-de-carne-medio', name: 'Croquete de Carne', category: MEDIO, art: 'croquete', featured: true,
     shortDescription: 'Croquete de carne de tamanho médio.' }),
   medio({ id: 'm-pastel-bacalhau', slug: 'pastel-de-bacalhau-medio', name: 'Pastel de Bacalhau', category: MEDIO, art: 'croquete',
@@ -79,9 +79,9 @@ export const SAMPLE_PRODUCTS: Product[] = [
 
   // ----- Pão de queijo e empadas -----
   make({ id: 'a-pao-queijo', slug: 'pao-de-queijo', name: 'Pão de Queijo', category: AVULSO, art: 'milho', featured: true,
-    shortDescription: 'Pão de queijo, à unidade.' }, soPronto(0.9), [10, 25, 50, 100], 10),
+    shortDescription: 'Pão de queijo, à unidade.' }, prontoOuForno(0.9), [10, 25, 50, 100], 10),
   make({ id: 'a-empada', slug: 'empada', name: 'Empada', category: AVULSO, art: 'empada', featured: true,
-    shortDescription: 'Empada, à unidade.' }, soPronto(1.0), [10, 25, 50, 100], 10),
+    shortDescription: 'Empada, à unidade.' }, prontoOuForno(1.0), [10, 25, 50, 100], 10),
 
   // ----- Salgados miniatura (vendidos em packs de 100) -----
   mini({ id: 'n-coxinha-frango', slug: 'mini-coxinha-de-frango', name: 'Mini Coxinha de Frango', category: MINI, art: 'coxinha', featured: true,
