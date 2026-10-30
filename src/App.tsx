@@ -34,6 +34,11 @@ const TITLES: [RegExp, string][] = [
   [/^registar$/, 'Criar conta'],
   [/^conta/, 'A minha conta'],
   [/^admin/, 'Gestão'],
+  [/^info-termos/, 'Termos e condições'],
+  [/^info-privacidade/, 'Política de privacidade'],
+  [/^info-cookies/, 'Política de cookies'],
+  [/^info-entregas/, 'Entregas'],
+  [/^info-devolucoes/, 'Devoluções e reclamações'],
 ];
 
 function Storefront({ route }: { route: string }) {
